@@ -126,7 +126,7 @@ class Graph(object):
                 continue
             self.__seen[child] = 1
             # names
-            names = [str(self.__graph_nodeIDs[child]), child, '', 'scientific_name']
+            names = [str(self.__graph_nodeIDs[child]), child, '', 'scientific name']
             outName.write('\t|\t'.join(names) + '\t|\n')
             # nodes
             rank = self.get_rank(child)
@@ -146,7 +146,7 @@ class Graph(object):
             ### names
             names = [str(self.__graph_nodeIDs['root']), 'all', '', 'synonym']
             outName.write('\t|\t'.join(names) + '\t|\n')
-            names = [str(self.__graph_nodeIDs['root']), 'root', '', 'scientific_name']
+            names = [str(self.__graph_nodeIDs['root']), 'root', '', 'scientific name']
             outName.write('\t|\t'.join(names) + '\t|\n')
             ### nodes
             nodes = [self.__graph_nodeIDs['root'], 1, 'no rank', embl_code,
