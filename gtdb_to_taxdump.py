@@ -23,6 +23,8 @@ parser.add_argument('tax_file', metavar='tax_file', type=str, nargs='+',
                     help='>=1 taxonomy file (or url)')
 parser.add_argument('-o', '--outdir', type=str, default='.',
                     help='Output directory (Default: %(default)s)')
+parser.add_argument('-e', '--embl-code', type=str, default='XX',
+                    help='embl code to use for all nodes (Default: %(default)s)')
 parser.add_argument('--version', action='version', version='0.0.1')
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
@@ -35,7 +37,7 @@ class Graph(object):
             If no dictionary or None is given, 
             an empty dictionary will be used
         """
-        self.__ranks = {'d__' : 'domain',
+        self.__ranks = {'d__' : 'superkingdom',
                         'p__' : 'phylum',
                         'c__' : 'class',
                         'o__' : 'order',
@@ -106,7 +108,7 @@ class Graph(object):
         for r in self.__ranks:
             if vertex.startswith(r):
                 return self.__ranks[r]
-        return 'strain'
+        return 'subspecies'
 
     def iter_graph(self, vertex):
         """ General iteration of all nodes in the graph """
@@ -118,7 +120,7 @@ class Graph(object):
                 self.iter_graph(child)
                 self.__seen[child] = 1
     
-    def _write_dmp_iter(self, vertex, outName, outNode):
+    def _write_dmp_iter(self, vertex, outName, outNode, embl_code='XX'):
         for child in self.__graph_dict[vertex]:
             if child in self.__seen:
                 continue
@@ -129,12 +131,12 @@ class Graph(object):
             # nodes
             rank = self.get_rank(child)
             nodes = [self.__graph_nodeIDs[child], self.__graph_nodeIDs[vertex],
-                     rank, 'XX', 0, 0, 11, 1, 1, 0, 0, 0]
+                     rank, embl_code, 0, 0, 11, 1, 1, 0, 0, 0]
             outNode.write('\t|\t'.join([str(x) for x in nodes]) + '\t|\n')
             # children
-            self._write_dmp_iter(child, outName, outNode)
+            self._write_dmp_iter(child, outName, outNode, embl_code)
             
-    def write_dmp(self, outdir='.'):   
+    def write_dmp(self, outdir='.', embl_code='XX'):   
         """ Writing names.dmp & nodes.dmp """
         names_file = os.path.join(outdir, 'names.dmp')
         nodes_file = os.path.join(outdir, 'nodes.dmp')
@@ -147,11 +149,11 @@ class Graph(object):
             names = [str(self.__graph_nodeIDs['root']), 'root', '', 'scientific_name']
             outName.write('\t|\t'.join(names) + '\t|\n')
             ### nodes
-            nodes = [self.__graph_nodeIDs['root'], 1, 'no rank', 'XX',
+            nodes = [self.__graph_nodeIDs['root'], 1, 'no rank', embl_code,
                      0, 0, 11, 1, 1, 0, 0, 0]
             outNode.write('\t|\t'.join([str(x) for x in nodes]) + '\t|\n')
             ## other nodes
-            self._write_dmp_iter('root', outName, outNode)
+            self._write_dmp_iter('root', outName, outNode, embl_code)
         return names_file, nodes_file
 
             
@@ -178,17 +180,17 @@ def load_gtdb_tax(infile, graph):
     """ loading gtdb taxonomy & adding to DAG """
 
     try:
-        ftpstream = urllib.request.urlopen(args.tax_file[0])
+        ftpstream = urllib.request.urlopen(infile)
         inF = csv.reader(codecs.iterdecode(ftpstream, 'utf-8'))
     except ValueError:
         inF = open(infile)
-    
+        
     for i,line in enumerate(inF):
         # parsing
         try:
-            line = line[0].rstrip()
-        except IndexError:
             line = line.rstrip()
+        except AttributeError:
+            line = line[0].rstrip()
         if line == '':
             continue
         line = line.split('\t')
@@ -220,7 +222,8 @@ def main(args):
         logging.info('Loading: {}'.format(F))
         load_gtdb_tax(F, graph)
     # transversing DAG and writing node.dmp & names.dmp
-    names_file, nodes_file = graph.write_dmp(args.outdir)
+    names_file, nodes_file = graph.write_dmp(args.outdir,
+                                             embl_code=args.embl_code)
     logging.info('File written: {}'.format(names_file))
     logging.info('File written: {}'.format(nodes_file))
          

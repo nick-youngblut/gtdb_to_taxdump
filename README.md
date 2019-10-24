@@ -18,11 +18,11 @@ taxonomy in the taxdump format (eg., kraken2 or TaxonKit)
 
 # Install
 
-No dependencies besides python.
+No dependencies besides python >= 3.6
 
 # Usage
 
-See `gtdb_to_taxdump.py`
+See `gtdb_to_taxdump.py -h`
 
 # GTDB website
 
