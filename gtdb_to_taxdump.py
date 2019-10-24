@@ -15,6 +15,9 @@ to NCBI taxdump format (names.dmp & nodes.dmp).
 
 The input can be >=1 tsv file with the taxonomy
 or >=1 url to the tsv file(s).
+
+The *.dmp files are written to `--outdir`.
+A tab-delim table of taxID info is written to STDOUT.
 """
 parser = argparse.ArgumentParser(description=desc,
                                  epilog=epi,
@@ -156,6 +159,27 @@ class Graph(object):
             self._write_dmp_iter('root', outName, outNode, embl_code)
         return names_file, nodes_file
 
+    def _to_tbl_iter(self, vertex):        
+        for child in self.__graph_dict[vertex]:
+            if child in self.__seen:
+                continue
+            self.__seen[child] = 1
+            # tbl row
+            x = [str(self.__graph_nodeIDs[child]), child, self.get_rank(child)]
+            print('\t'.join(x))
+            # children
+            self._to_tbl_iter(child)
+    
+    def to_tbl(self):
+        """ Writing table of values [taxID, name, rank] """
+        ## writing header
+        x = ['taxID', 'name', 'rank']
+        print('\t'.join(x))
+        ## writing root
+        self.__seen = {}
+        x = [str(self.__graph_nodeIDs['root']), 'root', 'no rank']
+        print('\t'.join(x))
+        self._to_tbl_iter('root')
             
 def find_all_paths(self, start_vertex, end_vertex, path=[]):
     """ find all paths from start_vertex to 
@@ -226,6 +250,9 @@ def main(args):
                                              embl_code=args.embl_code)
     logging.info('File written: {}'.format(names_file))
     logging.info('File written: {}'.format(nodes_file))
+    # writing standard table of taxIDs
+    graph.to_tbl()
+    
          
 if __name__ == '__main__':
     args = parser.parse_args()

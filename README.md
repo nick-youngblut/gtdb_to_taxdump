@@ -29,7 +29,8 @@ Example (GTDB release89):
 ```
 ./gtdb_to_taxdump.py \
   https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/ar122_taxonomy_r89.tsv \
-  https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/bac120_taxonomy_r89.tsv
+  https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/bac120_taxonomy_r89.tsv \
+  > taxID_info.tsv
 ```
 
 # GTDB website
