@@ -24,6 +24,14 @@ No dependencies besides python >= 3.6
 
 See `gtdb_to_taxdump.py -h`
 
+Example (GTDB release89):
+
+```
+./gtdb_to_taxdump.py \
+  https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/ar122_taxonomy_r89.tsv \
+  https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/bac120_taxonomy_r89.tsv
+```
+
 # GTDB website
 
 https://data.ace.uq.edu.au/public/gtdb/data/releases/
