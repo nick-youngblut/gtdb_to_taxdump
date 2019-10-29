@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 from __future__ import print_function
+# batteries
 import sys,os
 import argparse
 import logging
 import csv
 import urllib.request
 import codecs
+from collections import OrderedDict
 
 
 desc = 'Converting GTDB taxonomy to NCBI taxdump format'
@@ -18,6 +20,10 @@ or >=1 url to the tsv file(s).
 
 The *.dmp files are written to `--outdir`.
 A tab-delim table of taxID info is written to STDOUT.
+
+If `--table` is provided, then the taxID info is appended
+to the provided table file (also see `--column`). The table
+must be tab-delimited.
 """
 parser = argparse.ArgumentParser(description=desc,
                                  epilog=epi,
@@ -28,6 +34,10 @@ parser.add_argument('-o', '--outdir', type=str, default='.',
                     help='Output directory (Default: %(default)s)')
 parser.add_argument('-e', '--embl-code', type=str, default='XX',
                     help='embl code to use for all nodes (Default: %(default)s)')
+parser.add_argument('-t', '--table', type=str, default=None,
+                    help='Table to append taxIDs to. Accessions used for table join (Default: %(default)s)')
+parser.add_argument('-c', '--column', type=str, default='accession',
+                    help='Column in --table that contains genome accessions (Default: %(default)s)')
 parser.add_argument('--version', action='version', version='0.0.1')
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
@@ -180,7 +190,50 @@ class Graph(object):
         x = [str(self.__graph_nodeIDs['root']), 'root', 'no rank']
         print('\t'.join(x))
         self._to_tbl_iter('root')
-            
+
+    def _to_tbl_iter_idx(self, vertex, idx):        
+        for child in self.__graph_dict[vertex]:
+            if child in self.__seen:
+                continue
+            self.__seen[child] = 1
+            # tbl row
+            idx[child] = str(self.__graph_nodeIDs[child])
+            # children
+            self._to_tbl_iter_idx(child, idx)
+                
+    def append_tbl(self, table_file, join_column):
+        """ appending to table """
+        # creating index: name : [taxID, rank] 
+        idx = {}
+        self.__seen = {}
+        idx['root'] = str(self.__graph_nodeIDs['root'])
+        self._to_tbl_iter_idx('root', idx)
+    
+        # appending to file
+        out_file = os.path.splitext(table_file)[0] + '_wTaxIDs.tsv'
+        header = OrderedDict()
+        with open(table_file) as inF, open(out_file, 'w') as outF:
+            for i,line in enumerate(inF):
+                line = line.rstrip().split('\t')
+                if i == 0:
+                    header = {x:i for i,x in enumerate(line)}
+                    header['gtdb_taxid'] = len(header.keys()) + 1
+                    if not join_column in header.keys():
+                        msg = 'Cannot find column "{}" in file: {}'
+                        raise ValueError(msg.format(join_column, table_file))
+                    outF.write('\t'.join(header) + '\n')
+                else:
+                    acc = line[header[join_column]]
+                    try:                        
+                        line.append(idx[acc])
+                    except KeyError:
+                        msg = 'Cannot find "{}" in the taxID index'
+                        logging.info(msg.format(acc))
+                        line.append('NA')
+                    outF.write('\t'.join(line) + '\n')
+        logging.info('File written: {}'.format(out_file))
+                
+        
 def find_all_paths(self, start_vertex, end_vertex, path=[]):
     """ find all paths from start_vertex to 
         end_vertex in graph """
@@ -252,7 +305,9 @@ def main(args):
     logging.info('File written: {}'.format(nodes_file))
     # writing standard table of taxIDs
     graph.to_tbl()
-    
+    # appending to table
+    if args.table is not None:
+        graph.append_tbl(args.table, args.column)
          
 if __name__ == '__main__':
     args = parser.parse_args()
