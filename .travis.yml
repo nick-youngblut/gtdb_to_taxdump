@@ -25,9 +25,6 @@ before_install:
   
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION taxonkit
-  - python setup.py build_ext --inplace
-  - python setup.py build
-  - python setup.py install
   - conda list
 
 script:
