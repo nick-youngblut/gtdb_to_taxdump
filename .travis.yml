@@ -28,7 +28,7 @@ install:
   - conda list
 
 script:
-  - python gtdb_to_taxdump.py ./gtdb_to_taxdump.py tests/data/gtdb_r89.0/ar122_taxonomy_r89.tsv tests/data/gtdb_r89.0/bac120_taxonomy_r89_n10k.tsv
+  - python gtdb_to_taxdump.py tests/data/gtdb_r89.0/ar122_taxonomy_r89.tsv tests/data/gtdb_r89.0/bac120_taxonomy_r89_n10k.tsv
   - python gtdb_to_taxdump.py https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/ar122_taxonomy_r89.tsv
   - taxonkit list --data-dir . --ids 1,10,24
   - taxonkit lineage --data-dir . tests/data/taxonkit/taxIDs.txt
