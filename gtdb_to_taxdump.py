@@ -290,7 +290,14 @@ def load_gtdb_tax(infile, graph):
         inF.close()
     except AttributeError:
         pass
-                    
+
+def write_blank_dmp(outfile, outdir=None):
+    if outdir is not None:
+        outfile = os.path.join(outdir, outfile)
+    with open(outfile, 'w') as outF:
+        outF.write('#\n')
+    logging.info('File written: {}'.format(outfile))
+    
 def main(args):
     # creating DAG
     graph = Graph()
@@ -308,12 +315,15 @@ def main(args):
     # appending to table
     if args.table is not None:
         graph.append_tbl(args.table, args.column)
+    # writing "blank" delnodes.dmp & merged.dmp files
+    write_blank_dmp('delnodes.dmp', args.outdir)
+    write_blank_dmp('merged.dmp', args.outdir)
          
 if __name__ == '__main__':
     args = parser.parse_args()
     main(args)
 
-
+#-- notes --#
 # node.dmp ("\t|\t" delimited)
 #tax_id => nodeID              
 #parent tax_id => parent_nodeID

@@ -5,7 +5,7 @@ gtdb_to_taxdump
 
 Convert GTDB taxonomy to NCBI taxdump format.
 
-* Version: 0.1.0
+* Version: 0.1.1
 * Authors:
   * Nick Youngblut <nyoungb2@gmail.com>
 * Maintainers:
