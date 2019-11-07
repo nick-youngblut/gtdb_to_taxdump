@@ -24,6 +24,9 @@ A tab-delim table of taxID info is written to STDOUT.
 If `--table` is provided, then the taxID info is appended
 to the provided table file (also see `--column`). The table
 must be tab-delimited.
+
+delnodes.dmp & merged.dmp files are also written, but they
+are "empty" (only include "#\n").
 """
 parser = argparse.ArgumentParser(description=desc,
                                  epilog=epi,
