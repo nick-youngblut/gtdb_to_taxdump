@@ -15,8 +15,12 @@ epi = """DESCRIPTION:
 Convert Genome Taxonomy Database (GTDB) taxonomy files
 to NCBI taxdump format (names.dmp & nodes.dmp).
 
-The input can be >=1 tsv file with the taxonomy
+The input can be >=1 tsv file with the GTDB taxonomy
 or >=1 url to the tsv file(s).
+
+The input table format should be >=2 columns,
+(Column1 = accession, Column2 = gtdb_taxonomy),
+and no header
 
 The *.dmp files are written to `--outdir`.
 A tab-delim table of taxID info is written to STDOUT.
