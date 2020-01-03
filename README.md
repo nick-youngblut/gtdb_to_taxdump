@@ -1,4 +1,4 @@
-[![Travis-CI Build Status](https://travis-ci.org/nyoungblut/gtdb_to_taxdump.svg?branch=master)](https://travis-ci.org/nyoungblut/gtdb_to_taxdump)
+[![Travis-CI Build Status](https://travis-ci.org/nick-youngblut/gtdb_to_taxdump.svg?branch=master)](https://travis-ci.org/nick-youngblut/gtdb_to_taxdump)
 
 gtdb_to_taxdump
 ===============
