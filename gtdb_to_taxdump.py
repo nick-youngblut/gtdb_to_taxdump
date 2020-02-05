@@ -125,10 +125,7 @@ class Graph(object):
 
     def get_rank(self, vertex):
         """ Getting rank based on GTDB prefixes """
-        for r in self.__ranks:
-            if vertex.startswith(r):
-                return self.__ranks[r]
-        return 'subspecies'
+        return self.__ranks.get(vertex[0:3], 'subspecies')
 
     def iter_graph(self, vertex):
         """ General iteration of all nodes in the graph """
