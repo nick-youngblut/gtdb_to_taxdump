@@ -23,6 +23,10 @@ match anything in the NCBI! Running `gtdb_to_taxdump` on
 a different list of taxonomies (e.g., a different GTDB release)
 will create different taxIDs.
 
+# Citation 
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3696964.svg)](https://doi.org/10.5281/zenodo.3696964)
+
 # Install
 
 No dependencies besides python >= 3.6
