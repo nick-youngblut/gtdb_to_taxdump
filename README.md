@@ -1,4 +1,4 @@
-[![Travis-CI Build Status](https://travis-ci.org/nyoungblut/gtdb_to_taxdump.svg?branch=master)](https://travis-ci.org/nyoungblut/gtdb_to_taxdump)
+[![Travis-CI Build Status](https://travis-ci.org/nick-youngblut/gtdb_to_taxdump.svg?branch=master)](https://travis-ci.org/nick-youngblut/gtdb_to_taxdump)
 
 gtdb_to_taxdump
 ===============
@@ -22,6 +22,10 @@ Note that the taxIDs are arbitrarily assigned and don't
 match anything in the NCBI! Running `gtdb_to_taxdump` on
 a different list of taxonomies (e.g., a different GTDB release)
 will create different taxIDs.
+
+# Citation 
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3696964.svg)](https://doi.org/10.5281/zenodo.3696964)
 
 # Install
 
