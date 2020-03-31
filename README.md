@@ -5,7 +5,7 @@ gtdb_to_taxdump
 
 Convert GTDB taxonomy to NCBI taxdump format.
 
-* Version: 0.1.1
+* Version: 0.1.2
 * Authors:
   * Nick Youngblut <nyoungb2@gmail.com>
 * Maintainers:
@@ -51,6 +51,11 @@ wget https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/ar122_m
   > taxID_info.tsv
 ```
 
+# Extras
+
+*  `gtdb_to_diamond.py`
+  * Use to create a diamond database (with taxonomy) of genes from GTDB genomes
+  * This can be used to taxonomically classify reads and amino acid sequences with diamond & GTDB
 
 # GTDB website
 
