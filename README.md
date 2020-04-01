@@ -5,7 +5,7 @@ gtdb_to_taxdump
 
 Convert GTDB taxonomy to NCBI taxdump format.
 
-* Version: 0.1.2
+* Version: 0.1.3
 * Authors:
   * Nick Youngblut <nyoungb2@gmail.com>
 * Maintainers:
@@ -64,3 +64,4 @@ wget https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/ar122_m
 # GTDB website
 
 https://data.ace.uq.edu.au/public/gtdb/data/releases/
+

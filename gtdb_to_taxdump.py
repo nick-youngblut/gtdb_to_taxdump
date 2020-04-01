@@ -137,40 +137,46 @@ class Graph(object):
                 self.iter_graph(child)
                 self.__seen[child] = 1
     
-    def _write_dmp_iter(self, vertex, outName, outNode, embl_code='XX'):
+    def _write_dmp_iter(self, vertex, names, nodes, embl_code='XX'):
         for child in self.__graph_dict[vertex]:
             if child in self.__seen:
                 continue
             self.__seen[child] = 1
             # names
-            names = [str(self.__graph_nodeIDs[child]), child, '', 'scientific name']
-            outName.write('\t|\t'.join(names) + '\t|\n')
+            names.append([str(self.__graph_nodeIDs[child]), child, '',
+                          'scientific name'])
+            #outName.write('\t|\t'.join(names) + '\t|\n')
             # nodes
             rank = self.get_rank(child)
-            nodes = [self.__graph_nodeIDs[child], self.__graph_nodeIDs[vertex],
-                     rank, embl_code, 0, 0, 11, 1, 1, 0, 0, 0]
-            outNode.write('\t|\t'.join([str(x) for x in nodes]) + '\t|\n')
+            nodes.append([self.__graph_nodeIDs[child], self.__graph_nodeIDs[vertex],
+                          rank, embl_code, 0, 0, 11, 1, 1, 0, 0, 0])
+            #outNode.write('\t|\t'.join([str(x) for x in nodes]) + '\t|\n')
             # children
-            self._write_dmp_iter(child, outName, outNode, embl_code)
+            self._write_dmp_iter(child, names, nodes, embl_code)
             
     def write_dmp(self, outdir='.', embl_code='XX'):   
         """ Writing names.dmp & nodes.dmp """
         names_file = os.path.join(outdir, 'names.dmp')
         nodes_file = os.path.join(outdir, 'nodes.dmp')
-        with open(names_file, 'w') as outName, open(nodes_file, 'w') as outNode:
-            # iterating over all vertices starting at the root
-            ## writing root
-            ### names
-            names = [str(self.__graph_nodeIDs['root']), 'all', '', 'synonym']
-            outName.write('\t|\t'.join(names) + '\t|\n')
-            names = [str(self.__graph_nodeIDs['root']), 'root', '', 'scientific name']
-            outName.write('\t|\t'.join(names) + '\t|\n')
-            ### nodes
-            nodes = [self.__graph_nodeIDs['root'], 1, 'no rank', embl_code,
-                     0, 0, 11, 1, 1, 0, 0, 0]
-            outNode.write('\t|\t'.join([str(x) for x in nodes]) + '\t|\n')
-            ## other nodes
-            self._write_dmp_iter('root', outName, outNode, embl_code)
+        # iterating over all vertices starting at the root
+        ## writing root
+        ### names
+        names = [[str(self.__graph_nodeIDs['root']), 'all', '', 'synonym']]
+        names.append([str(self.__graph_nodeIDs['root']), 'root', '', 'scientific name'])
+        ### nodes
+        nodes = [[self.__graph_nodeIDs['root'], 1, 'no rank', embl_code,
+                  0, 0, 11, 1, 1, 0, 0, 0]]
+        ## Child names & nodes
+        self._write_dmp_iter('root', names, nodes, embl_code)
+        # Sorting by taxID & writing
+        ## names
+        with open(names_file, 'w') as outName:
+            for x in sorted(names, key = lambda x: int(x[0])):
+                outName.write('\t|\t'.join(x) + '\t|\n')
+        ## nodes
+        with open(nodes_file, 'w') as outNode:
+            for x in sorted(nodes, key = lambda x: x[0]):
+                outNode.write('\t|\t'.join([str(xx) for xx in x]) + '\t|\n')            
         return names_file, nodes_file
 
     def _to_tbl_iter(self, vertex):        
@@ -327,26 +333,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
     main(args)
 
-#-- notes --#
-# node.dmp ("\t|\t" delimited)
-#tax_id => nodeID              
-#parent tax_id => parent_nodeID
-#rank => steps from root (no rank, domain, phylum, class, order, family, genus, species, strain)
-#embl code => XX?			
-#division id => 0
-#inherited div flag => 0
-#genetic code id => 11
-#inherited GC  flag => 1 (except for root)
-#mitochondrial genetic code id => 1
-#inherited MGC flag  => 0
-#GenBank hidden flag => 0
-#hidden subtree root flag => 0
-#comments => ''
-
-# names.dmp
-#tax_id => nodeID
-#name_txt => taxonomic classification
-#unique name => taxonomic classification (full lineage)
-#name class => "scientific name"
-## Notes:
-# * need "all"
