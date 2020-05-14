@@ -1,0 +1,38 @@
+name: gtdb_to_taxdump
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    name: build (${{ matrix.python-version }}, ${{ matrix.os }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+    steps:
+    - uses: goanpeca/setup-miniconda@v1
+      with:
+        miniconda-version: 'latest'
+        auto-update-conda: true
+        python-version: ${{ matrix.python-version }}
+        channels: conda-forge,bioconda
+        activate-environment: gtdb_to_taxdump
+    - name: conda env setup
+      shell: bash -l {0}
+      run: |
+        pwd
+        conda info -a
+        conda install python=${{ matrix.python-version }} bioconda::taxonkit
+    - uses: actions/checkout@v2	
+    - name: Test scripts
+      shell: bash -l {0}
+      run: |
+        python gtdb_to_taxdump.py tests/data/gtdb_r89.0/ar122_taxonomy_r89.tsv tests/data/gtdb_r89.0/bac120_taxonomy_r89_n10k.tsv | head -n 100
+        python gtdb_to_taxdump.py https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/ar122_taxonomy_r89.tsv | head -n 100
+        taxonkit list --data-dir . --ids 1,10,24 | head -n 100
+        taxonkit lineage --data-dir . tests/data/taxonkit/taxIDs.txt | head -n 100
+
