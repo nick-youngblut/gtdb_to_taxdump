@@ -31,8 +31,8 @@ jobs:
     - name: Test scripts
       shell: bash -l {0}
       run: |
-        python gtdb_to_taxdump.py tests/data/gtdb_r89.0/ar122_taxonomy_r89.tsv tests/data/gtdb_r89.0/bac120_taxonomy_r89_n10k.tsv | head -n 100
-        python gtdb_to_taxdump.py https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/ar122_taxonomy_r89.tsv | head -n 100
-        taxonkit list --data-dir . --ids 1,10,24 | head -n 100
-        taxonkit lineage --data-dir . tests/data/taxonkit/taxIDs.txt | head -n 100
+        python gtdb_to_taxdump.py tests/data/gtdb_r89.0/ar122_taxonomy_r89.tsv tests/data/gtdb_r89.0/bac120_taxonomy_r89_n10k.tsv | tail -n 100
+        python gtdb_to_taxdump.py https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/ar122_taxonomy_r89.tsv | tail -n 100
+        taxonkit list --data-dir . --ids 1,10,24 | tail -n 100
+        taxonkit lineage --data-dir . tests/data/taxonkit/taxIDs.txt | tail -n 100
 
