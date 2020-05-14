@@ -1,3 +1,5 @@
+![gtdb_to_taxdump](https://github.com/nick-youngblut/gtdb_to_taxdump/workflows/gtdb_to_taxdump/badge.svg)
+
 gtdb_to_taxdump
 ===============
 
