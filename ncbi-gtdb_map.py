@@ -54,6 +54,12 @@ Output table columns:
     * Fraction of tips with that LCA
   * target_tax_level
     * The taxonomic level of the target (eg., genus or species)
+
+Examples:
+# NCBI => GTDB
+python ncbi-gtdb_map.py tests/data/ncbi-gtdb/ncbi_tax_queries.txt https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/ar122_metadata_r95.tar.gz https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/bac120_metadata_r95.tar.gz
+# GTDB => NCBI
+python ncbi-gtdb_map.py -q gtdb_taxonomy tests/data/ncbi-gtdb/gtdb_tax_queries.txt https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/ar122_metadata_r95.tar.gz https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/bac120_metadata_r95.tar.gz
 """
 parser = argparse.ArgumentParser(description=desc,
                                  epilog=epi,
