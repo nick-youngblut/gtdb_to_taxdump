@@ -29,7 +29,9 @@ will create different taxIDs.
 
 # Install
 
-No dependencies besides python >= 3.6
+* `python >= 3.6`
+* Only for `ncbi-gtdb_map.py`
+   * `networkx >= 2.4`
 
 # Usage
 
@@ -71,9 +73,11 @@ wget https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/ar122_m
   * Taxonomy mapping is done via the GTDB metadata table (includes both NCBI & GTDB taxonomies)
   * Mapping can go either way: `NCBI => GTDB` or `GTDB => NCBI` (see `--query-taxonomy`)
   * The user can select "fuzzy" mappings, in which the mapping isn't a perfect 1-to-1
+  * See the script help docs for examples on usage
 * `gtdb_to_diamond.py`
   * Use to create a diamond database (with taxonomy) of genes from GTDB genomes
   * This can be used to taxonomically classify reads and amino acid sequences with diamond & GTDB
+  * See the script help docs for examples on usage
 
 # GTDB website
 
