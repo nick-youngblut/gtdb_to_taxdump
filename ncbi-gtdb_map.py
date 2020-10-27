@@ -75,6 +75,11 @@ parser.add_argument('-f', '--fraction', type=float, default=0.9,
                     help='Homogeneity of LCA (fraction) in order to be used (Default: %(default)s)')
 parser.add_argument('-m', '--max-tips', type=int, default=100,
                     help='Max no. of tips used for LCA determination. If more, subsampling w/out replacement (Default: %(default)s)')
+parser.add_argument('-c', '--column', type=int, default=1,
+                    help='Column containing the queries;' + \
+                         ' assuming a tab-delim table (Default: %(default)s)')
+parser.add_argument('-H', '--header', action='store_true', default=False,
+                    help='Header in table of queries (Default: %(default)s)?')
 parser.add_argument('-p', '--procs', type=int, default=1,
                     help='No. of parallel processes (Default: %(default)s)')
 parser.add_argument('-v', '--verbose', action='store_true', default=False,
@@ -263,14 +268,17 @@ def _query_tax(tax_queries, G, qtax, ttax, lca_frac=1.0, max_tips=100, verbose=F
     # return
     return idx
 
-def query_tax(tax_queries, G, tax, lca_frac=1.0, max_tips=100, procs=1, verbose=False):
+def query_tax(tax_queries, G, tax, lca_frac=1.0, max_tips=100,
+              column=1, header=False, procs=1, verbose=False):
     ttax = 'ncbi_taxonomy' if tax == 'gtdb_taxonomy' else 'gtdb_taxonomy'
     # loading & batching queries
     logging.info('Reading in queries: {}'.format(tax_queries))    
     q_batch = [[] for i in range(procs)]
     with open(tax_queries) as inF:
         for i,line in enumerate(inF):
-            line = line.rstrip()
+            if i == 0 and header:
+                continue
+            line = line.rstrip().split('\t')[column - 1]
             if line == '' or line == 'root':
                 continue
             q_batch[i % procs].append(line)
@@ -315,7 +323,9 @@ def main(args):
                     tax=args.query_taxonomy,
                     lca_frac = args.fraction,
                     max_tips = args.max_tips,
-                    procs = args.procs,
+                    column = args.column,
+                    header = args.header,
+                    procs = args.procs,                    
                     verbose = args.verbose)
     # writing results
     write_table(idx, qtax=args.query_taxonomy)
