@@ -4,6 +4,8 @@ from __future__ import print_function
 import os
 import sys
 import re
+import gzip
+import bz2
 import shutil
 import tarfile
 import argparse
@@ -44,6 +46,11 @@ Algorithm:
     * "fuzzy" LCAs allowed, in which only >= (--fraction) of the tips must have that LCA
   * If no match in reference taxonomy or no LCA that is >= (--fraction), then the 
     target LCA is "unclassified"
+
+The input table of queries should be tab-delimited (select the column with --column).
+The table can have a header (see --header) and can be compressed via gzip or bzip2.
+
+Output written to STDOUT. 
 
 Output table columns:
   * ncbi_taxonomy
@@ -87,6 +94,25 @@ parser.add_argument('-v', '--verbose', action='store_true', default=False,
 parser.add_argument('--version', action='version', version='0.0.1')
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
+
+def _open(infile):
+    """
+    Openning of input, regardless of compression
+    """
+    if infile.endswith('.bz2'):
+        return bz2.open(infile, 'rb')
+    elif infile.endswith('.gz'):
+        return gzip.open(infile, 'rb')
+    else:
+        return open(infile)
+
+def _decode(line, infile):
+    """
+    Decoding input, depending on the file extension
+    """
+    if os.path.isfile(infile) and (infile.endswith('.gz') or infile.endswith('.bz2')):
+        line = line.decode('utf-8')
+    return line
 
 def format_taxonomy(T, hierarchy, acc):
     """
@@ -145,12 +171,13 @@ def load_gtdb_metadata(infile, G):
     try:
         inF,tmpdir = dl_uncomp(infile)
     except ValueError:
-        inF = open(infile)
+        inF = _open(infile)
         tmpdir = None
     # reading
     header = {}
     for i,line in enumerate(inF):        
         # parsing
+        line = _decode(line, infile)
         try:
             line = line.rstrip()
         except AttributeError:
@@ -268,16 +295,18 @@ def _query_tax(tax_queries, G, qtax, ttax, lca_frac=1.0, max_tips=100, verbose=F
     # return
     return idx
 
+
 def query_tax(tax_queries, G, tax, lca_frac=1.0, max_tips=100,
               column=1, header=False, procs=1, verbose=False):
     ttax = 'ncbi_taxonomy' if tax == 'gtdb_taxonomy' else 'gtdb_taxonomy'
     # loading & batching queries
     logging.info('Reading in queries: {}'.format(tax_queries))    
-    q_batch = [[] for i in range(procs)]
-    with open(tax_queries) as inF:
+    q_batch = [[] for i in range(procs)]    
+    with _open(tax_queries) as inF:
         for i,line in enumerate(inF):
             if i == 0 and header:
                 continue
+            line = _decode(line, tax_queries)
             line = line.rstrip().split('\t')[column - 1]
             if line == '' or line == 'root':
                 continue
@@ -285,6 +314,8 @@ def query_tax(tax_queries, G, tax, lca_frac=1.0, max_tips=100,
             # debug
             #if i > 10000:
             #    break
+    logging.info('  No. of batches: {}'.format(len(q_batch)))
+    logging.info('  Queries per batch: {}'.format(len(q_batch[0])))
     # query graphs
     logging.info('Querying taxonomies...')
     func = functools.partial(_query_tax, G=G, qtax=tax, ttax=ttax,

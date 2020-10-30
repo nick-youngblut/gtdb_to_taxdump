@@ -30,8 +30,10 @@ will create different taxIDs.
 # Install
 
 * `python >= 3.6`
+* Only for `gtdb_to_diamond.py`
+  * `diamond`
 * Only for `ncbi-gtdb_map.py`
-   * `networkx >= 2.4`
+  * `networkx >= 2.4`
 
 # Usage
 
