@@ -259,7 +259,7 @@ def lca_many_nodes(G, nodes, lca_frac=1.0):
 
 def _query_tax(tax_queries, G, qtax, ttax, lca_frac=1.0, max_tips=100, verbose=False):
     """
-    Querying list of taxonomic names.
+    Querying list of taxonomic names
     """
     pid = os.getpid()
     idx = {}
@@ -295,13 +295,16 @@ def _query_tax(tax_queries, G, qtax, ttax, lca_frac=1.0, max_tips=100, verbose=F
     # return
     return idx
 
-
 def query_tax(tax_queries, G, tax, lca_frac=1.0, max_tips=100,
               column=1, header=False, procs=1, verbose=False):
+    """
+    Querying list of taxonomic names    
+    """
     ttax = 'ncbi_taxonomy' if tax == 'gtdb_taxonomy' else 'gtdb_taxonomy'
     # loading & batching queries
-    logging.info('Reading in queries: {}'.format(tax_queries))    
-    q_batch = [[] for i in range(procs)]    
+    logging.info('Reading in queries: {}'.format(tax_queries))
+    n_queries = 0
+    queries = {}
     with _open(tax_queries) as inF:
         for i,line in enumerate(inF):
             if i == 0 and header:
@@ -310,10 +313,20 @@ def query_tax(tax_queries, G, tax, lca_frac=1.0, max_tips=100,
             line = line.rstrip().split('\t')[column - 1]
             if line == '' or line == 'root':
                 continue
-            q_batch[i % procs].append(line)
+            try:
+                queries[line] += 1
+            except KeyError:
+                queries[line] = 1
             # debug
             #if i > 10000:
             #    break
+    logging.info('No. of queries: {}'.format(sum(queries.values())))
+    logging.info('No. of de-rep queries: {}'.format(len(queries.keys())))
+    # batching
+    q_batch = [[] for i in range(procs)]
+    for i,q in enumerate(queries):
+        q_batch[i % procs].append(q)
+    queries = None
     logging.info('  No. of batches: {}'.format(len(q_batch)))
     logging.info('  Queries per batch: {}'.format(len(q_batch[0])))
     # query graphs
