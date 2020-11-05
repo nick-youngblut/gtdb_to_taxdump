@@ -88,6 +88,8 @@ parser.add_argument('-c', '--column', type=int, default=1,
                          ' assuming a tab-delim table (Default: %(default)s)')
 parser.add_argument('-H', '--header', action='store_true', default=False,
                     help='Header in table of queries (Default: %(default)s)?')
+parser.add_argument('-P', '--prefix', type=str, default='',
+                    help='Add prefix to all queries such as "s__" (Default: %(default)s)')
 parser.add_argument('-p', '--procs', type=int, default=1,
                     help='No. of parallel processes (Default: %(default)s)')
 parser.add_argument('-v', '--verbose', action='store_true', default=False,
@@ -295,7 +297,7 @@ def _query_tax(tax_queries, G, qtax, ttax, lca_frac=1.0, max_tips=100, verbose=F
     return idx
 
 def query_tax(tax_queries, G, tax, lca_frac=1.0, max_tips=100,
-              column=1, header=False, procs=1, verbose=False):
+              column=1, header=False, prefix='', procs=1, verbose=False):
     """
     Querying list of taxonomic names    
     """
@@ -312,6 +314,7 @@ def query_tax(tax_queries, G, tax, lca_frac=1.0, max_tips=100,
             line = line.rstrip().split('\t')[column - 1]
             if line == '' or line == 'root':
                 continue
+            line = prefix + line
             try:
                 queries[line] += 1
             except KeyError:
@@ -368,6 +371,7 @@ def main(args):
                     max_tips = args.max_tips,
                     column = args.column,
                     header = args.header,
+                    prefix = args.prefix,
                     procs = args.procs,                    
                     verbose = args.verbose)
     # writing results
