@@ -1,8 +1,8 @@
-Escherichia
-Bacillus_A
-Xanthomonas oryzae
-Gammaproteobacteria
-Burkholderiales
-Bacteroidia
-Homo sapiens
+g__Escherichia
+g__Bacillus_A
+s__Xanthomonas oryzae
+c__Gammaproteobacteria
+o__Burkholderiales
+c__Bacteroidia
+s__Homo sapiens
 Blank

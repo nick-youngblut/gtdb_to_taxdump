@@ -1,11 +1,11 @@
-Methanobrevibacter
-Escherichia coli
-Bacillus anthracis
-Xanthomonas oryzae
-Methanobrevibacter smithii
-Methanobacteriaceae
-Gammaproteobacteria
-Betaproteobacteria
-Bacteroidetes
-Homo sapiens
-Blank
+g__Methanobrevibacter
+s__Escherichia coli
+s__Bacillus anthracis
+s__Xanthomonas oryzae
+s__Methanobrevibacter smithii
+s__Aquicella lusitana
+f__Methanobacteriaceae
+c__Gammaproteobacteria
+c__Betaproteobacteria
+p__Bacteroidetes
+s__Homo sapiens

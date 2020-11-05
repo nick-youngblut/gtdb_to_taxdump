@@ -29,9 +29,10 @@ Using the GTDB metadata table (which contains both NCBI and GTDB taxonomies)
 to map taxonomic classifications between the 2 taxonomies.
 
 For example, determine GTDB equivalent of the NCBI taxonomic classifications:
-* Bacillus
-* Xanthomonas oryzae
-* Burkholderiaceae
+* g__Bacillus
+* s__Xanthomonas oryzae
+* f__Burkholderiaceae
+* s__Methanobrevibacter smithii
 
 Algorithm:
 * Read in GTDB metadata (bac and/or arc)
@@ -118,10 +119,11 @@ def format_taxonomy(T, hierarchy, acc):
     """
     Formatting taxonomy to conform to a set hierarchy
     """
+    
     Tx = ['' for i in range(len(hierarchy))]
     for i,x in enumerate(hierarchy[:-1]):
         if len(T) < i + 1 or T[i] == '' or T[i] == 'unclassified':
-            Tx[i] = ':'.join([x, acc])
+            Tx[i] = '__'.join([x[0], acc])
         else:
             Tx[i] = T[i]
     Tx[-1] = acc
@@ -131,13 +133,11 @@ def add_taxonomy(line, line_num, header, G, tax='ncbi_taxonomy'):
     """
     Adding taxonomy nodes/edits to the graph
     """
-    regex = re.compile(r'^[dpcofgs]__')
     hierarchy = ['domain', 'phylum', 'class', 'order',
                  'family', 'genus', 'species', 'strain']
     # checking taxonomy format
     acc = line[header['accession']]
     T = line[header[tax]].split(';')
-    T = [regex.sub('', x) for x in T]
     T = format_taxonomy(T, hierarchy, acc)
     # adding taxonomy to graph
     for i in range(len(hierarchy)):
@@ -249,7 +249,6 @@ def lca_many_nodes(G, nodes, lca_frac=1.0):
             except KeyError:
                 T[i][node] = 1
                 
-    # from tip to root, which passess LCA cutoff?
     ## note: species is lowest possible level
     for i in range(len(T)-1)[::-1]:
         lca = lca_frac_pass(T[i], lca_frac)
