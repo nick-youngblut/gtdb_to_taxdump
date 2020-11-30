@@ -11,7 +11,6 @@ Convert GTDB taxonomy to NCBI taxdump format.
 * Maintainers:
   * Nick Youngblut <nyoungb2@gmail.com>
 
-
 # Summary
 
 Convert GTDB taxonomy to NCBI taxdump format in order to
