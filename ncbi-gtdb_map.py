@@ -48,12 +48,14 @@ Algorithm:
   * If no match in reference taxonomy or no LCA that is >= (--fraction), then the 
     target LCA is "unclassified"
 
-The input table of queries should be tab-delimited (select the column with --column).
-The table can have a header (see --header) and can be compressed via gzip or bzip2.
+Notes:
+* The input table of queries should be tab-delimited (select the column with --column).
+* Query-target matching is caps-invariant (all converted to lower case for matching)!
+* The table can have a header (see --header) and can be compressed via gzip or bzip2.
 
-Output written to STDOUT. 
-
-Output table columns:
+Output:
+* Output written to STDOUT
+* Output table columns
   * ncbi_taxonomy
     * NCBI taxonomy name
   * gtdb_taxonomy
@@ -79,7 +81,7 @@ parser.add_argument('gtdb_metadata', metavar='gtdb_metadata', type=str, nargs='+
 parser.add_argument('-q', '--query-taxonomy', type=str, default='ncbi_taxonomy',
                     choices=['ncbi_taxonomy', 'gtdb_taxonomy'],
                     help='Taxonomy of the query list (Default: %(default)s)')
-parser.add_argument('-f', '--fraction', type=float, default=0.9,
+parser.add_argument('-f', '--fraction', type=float, default=0.51,
                     help='Homogeneity of LCA (fraction) in order to be used (Default: %(default)s)')
 parser.add_argument('-m', '--max-tips', type=int, default=100,
                     help='Max no. of tips used for LCA determination. If more, subsampling w/out replacement (Default: %(default)s)')
@@ -90,6 +92,10 @@ parser.add_argument('-H', '--header', action='store_true', default=False,
                     help='Header in table of queries (Default: %(default)s)?')
 parser.add_argument('-P', '--prefix', type=str, default='',
                     help='Add prefix to all queries such as "s__" (Default: %(default)s)')
+parser.add_argument('--completeness', type=float, default=50.0,
+                    help='Only include GTDB genomes w/ >=X CheckM completeness (Default: %(default)s)')
+parser.add_argument('--contamination', type=float, default=5.0,
+                    help='Only include GTDB genomes w/ <X CheckM contamination (Default: %(default)s)')
 parser.add_argument('-p', '--procs', type=int, default=1,
                     help='No. of parallel processes (Default: %(default)s)')
 parser.add_argument('-v', '--verbose', action='store_true', default=False,
@@ -120,8 +126,7 @@ def _decode(line, infile):
 def format_taxonomy(T, hierarchy, acc):
     """
     Formatting taxonomy to conform to a set hierarchy
-    """
-    
+    """    
     Tx = ['' for i in range(len(hierarchy))]
     for i,x in enumerate(hierarchy[:-1]):
         if len(T) < i + 1 or T[i] == '' or T[i] == 'unclassified':
@@ -144,12 +149,12 @@ def add_taxonomy(line, line_num, header, G, tax='ncbi_taxonomy'):
     # adding taxonomy to graph
     for i in range(len(hierarchy)):
         # adding node
-        G[tax].add_node(T[i], taxonomy=hierarchy[i])
+        G[tax].add_node(T[i].lower(), taxonomy=hierarchy[i], orig_name=T[i])
         # adding edge
         if i == 0:
-            G[tax].add_edge('root', T[i])
+            G[tax].add_edge('root', T[i].lower())
         else:
-            G[tax].add_edge(T[i-1], T[i])
+            G[tax].add_edge(T[i-1].lower(), T[i].lower())
 
 def dl_uncomp(url):
     """
@@ -165,7 +170,7 @@ def dl_uncomp(url):
     inF = open(os.path.join(outdir, tar.getnames()[0]))
     return inF,outdir
             
-def load_gtdb_metadata(infile, G):
+def load_gtdb_metadata(infile, G, completeness, contamination):
     """
     Loading gtdb taxonomy & adding to DAG 
     """
@@ -176,6 +181,7 @@ def load_gtdb_metadata(infile, G):
         inF = _open(infile)
         tmpdir = None
     # reading
+    stats = {'passed' : 0, 'completeness' : 0, 'contamination' : 0}
     header = {}
     for i,line in enumerate(inF):        
         # parsing
@@ -189,14 +195,30 @@ def load_gtdb_metadata(infile, G):
         line = line.split('\t')
         if len(line) < 2:
             msg = 'Line{} does not contain >=2 columns'
-            raise ValueError(msg.format(i))
+            raise ValueError(msg.format(i+1))
         # header
         if i == 0:
             header = {x:ii for ii,x in enumerate(line)}
             continue
+        # filtering by checkM stats
+        try:
+            X = line[header['checkm_completeness']]
+        except KeyError:
+            raise KeyError('Cannot find "checkm_completeness"')
+        if float(X) < completeness:
+            stats['completeness'] += 1
+            continue
+        try:
+            X = line[header['checkm_contamination']]
+        except KeyError:
+            raise KeyError('Cannot find "checkm_contamination"')
+        if float(X) >= contamination:
+            stats['contamination'] += 1
+            continue
         # Adding taxonomies to graphs
         add_taxonomy(line, i, header, G, tax='gtdb_taxonomy')
         add_taxonomy(line, i, header, G, tax='ncbi_taxonomy')
+        stats['passed'] += 1
     # closing
     try:
         inF.close()
@@ -204,6 +226,10 @@ def load_gtdb_metadata(infile, G):
         pass
     if tmpdir is not None and os.path.isdir(tmpdir):
         shutil.rmtree(tmpdir)
+    # stats
+    logging.info('  Completeness-filtered entries: {}'.format(stats['completeness']))
+    logging.info('  Contamination-filtered entries: {}'.format(stats['contamination']))
+    logging.info('  Entries used: {}'.format(stats['passed']))    
     return G
 
 def DiGraph_w_root():
@@ -250,11 +276,12 @@ def lca_many_nodes(G, nodes, lca_frac=1.0):
                 T[i][node] += 1
             except KeyError:
                 T[i][node] = 1
-                
-    ## note: species is lowest possible level
+    ## from finest to coarsest, does any classification pass the lca_frac?
+    ### note: species is lowest possible level
     for i in range(len(T)-1)[::-1]:
         lca = lca_frac_pass(T[i], lca_frac)
         if lca[0] is not None:
+            lca[0] = G.nodes[lca[0]]['orig_name']
             return lca + [hierarchy[i]]
     raise ValueError('Cannot find LCA for nodes: {}'.format(','.join(nodes)))
 
@@ -270,7 +297,7 @@ def _query_tax(tax_queries, G, qtax, ttax, lca_frac=1.0, max_tips=100, verbose=F
         tips = []
         try:
             # getting descendents of the node
-            tips = [desc for desc in descendants(G[qtax], Q) if \
+            tips = [desc for desc in descendants(G[qtax], Q[0]) if \
                     G[qtax].nodes[desc]['taxonomy'] == 'strain']
             status['hit'] += 1
         except nx.exception.NetworkXError:
@@ -281,9 +308,9 @@ def _query_tax(tax_queries, G, qtax, ttax, lca_frac=1.0, max_tips=100, verbose=F
             if n_tips > max_tips:                    
                 tips = random.sample(tips, k=max_tips)
             LCA = lca_many_nodes(G[ttax], tips, lca_frac=lca_frac)
-            idx[Q] = LCA
+            idx[Q[1]] = LCA
         else:
-            idx[Q] = ['unclassified', 'NA', 'NA']
+            idx[Q[1]] = ['unclassified', 'NA', 'NA']
         # status
         x = status['hit'] + status['no hit']
         if verbose and x % 1000 == 0:
@@ -314,7 +341,7 @@ def query_tax(tax_queries, G, tax, lca_frac=1.0, max_tips=100,
             line = line.rstrip().split('\t')[column - 1]
             if line == '' or line == 'root':
                 continue
-            line = prefix + line
+            line = (prefix + line.lower(), line)
             try:
                 queries[line] += 1
             except KeyError:
@@ -363,7 +390,7 @@ def main(args):
          'gtdb_taxonomy' : DiGraph_w_root()}
     for F in args.gtdb_metadata:
         logging.info('Loading: {}'.format(F))
-        load_gtdb_metadata(F, G)
+        load_gtdb_metadata(F, G, args.completeness, args.contamination)
     # querying
     idx = query_tax(args.tax_queries, G,
                     tax=args.query_taxonomy,
