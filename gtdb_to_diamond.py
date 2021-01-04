@@ -23,10 +23,16 @@ gene amino acid sequences to the input files required for
 with diamond (LCA-based method).
 
 Example of getting a GTDB faa fasta tarball:
-wget https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/gtdb_r89_rep_genomes.faa.tar.gz
+  
+  wget https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/genomic_files_reps/gtdb_proteins_aa_reps_r95.tar.gz
 
-Example "diamond makedb" run with output files:
-diamond makedb --in $OUTDIR/gtdb_all.faa --db gtdb.dmnd --taxonmap $OUTDIR/accession2taxid.tsv --taxonnodes $OUTDIR/nodes.dmp --taxonnames $OUTDIR/names.dmp
+Example extraction & formatting of faa files from tarball:
+
+  gtdb_to_diamond.py gtdb_proteins_aa_reps_r95.tar.gz names.dmp nodes.dmp
+
+Example "diamond makedb" run with gtdb_to_diamond.py output files:
+
+  diamond makedb --in $OUTDIR/gtdb_all.faa --db gtdb.dmnd --taxonmap $OUTDIR/accession2taxid.tsv --taxonnodes $OUTDIR/nodes.dmp --taxonnames $OUTDIR/names.dmp
 """
 parser = argparse.ArgumentParser(description=desc,
                                  epilog=epi,
@@ -43,13 +49,16 @@ parser.add_argument('-t', '--tmpdir', type=str, default='gtdb_to_diamond_TMP',
                     help='Temporary directory (Default: %(default)s)')
 parser.add_argument('-g', '--gzip', action='store_true', default=False,
                     help='gzip output fasta? (Default: %(default)s)')
+parser.add_argument('-k', '--keep-temp', action='store_true', default=False,
+                    help='Keep temporary output? (Default: %(default)s)')
 parser.add_argument('--version', action='version', version='0.0.1')
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
 
 def copy_nodes(infile, outdir):
-    """Simple copy of nodes.dmp file into the output directory
+    """
+    Simple copy of nodes.dmp file into the output directory
     """
     logging.info('Read nodes.dmp file: {}'.format(infile))
     outfile = os.path.join(outdir, 'nodes.dmp')
@@ -61,7 +70,8 @@ def copy_nodes(infile, outdir):
     logging.info('File written: {}'.format(outfile))
 
 def read_names_dmp(infile, outdir):
-    """ Reading names.dmp file
+    """ 
+    Reading names.dmp file
     """
     outfile = os.path.join(outdir, 'names.dmp')
     regex = re.compile(r'\t\|\t')
@@ -82,29 +92,34 @@ def read_names_dmp(infile, outdir):
     return names_dmp
 
 def faa_gz_files(members):
-    """ Getting .faa.gz files from the tarball
+    """ 
+    Getting .faa.gz files from the tarball
     """
     for tarinfo in members:
-        x = os.path.splitext(tarinfo.name)
-        if x[1] == '.gz':
-            if os.path.splitext(x[0])[1] == '.faa':
+        for ext in ('.faa.gz', '.faa'):
+            if tarinfo.name.endswith(ext):
                 yield tarinfo
 
-def faa_gz_index(directory='.', extension='.faa.gz'):
-    """ Creating {accession:faa_file} index
+def faa_gz_index(directory='.', extensions=['.faa', '.faa.gz']):
+    """ 
+    Creating {accession:faa_file} index from extracted tarball files
     """
-    regex = re.compile(r'_protein.faa.gz$')
+    extensions = set(extensions)
+    regex = re.compile(r'(_protein\.faa\.gz|_protein\.faa)$')
     regexp = re.compile(r'^[^_]+_|_')    
     found = {}
     for dirpath, dirnames, files in os.walk(directory):
         for name in files:
-            if name.lower().endswith(extension):
-                accession = regexp.sub('', regex.sub('', name))
-                found[accession] = os.path.join(dirpath, name)
+            for ext in extensions:
+                if name.lower().endswith(ext):
+                    accession = regexp.sub('', regex.sub('', name))
+                    found[accession] = os.path.join(dirpath, name)
+                    continue
     return found
                 
 def uncomp_tarball(tarball_file, tmp_dir):
-    """ Extracting info from the tarball
+    """ 
+    Extracting info from the tarball
     """
     # tmp dir
     if os.path.isdir(tmp_dir):
@@ -112,18 +127,22 @@ def uncomp_tarball(tarball_file, tmp_dir):
     os.makedirs(tmp_dir)
     # extracting tarball
     logging.info('Extracting tarball: {}'.format(tarball_file))
+    logging.info('  Extracting to: {}'.format(tmp_dir))
     tar = tarfile.open(tarball_file)
     tar.extractall(path=tmp_dir, members=faa_gz_files(tar))
     tar.close()
     # listing files
-    regex = re.compile(r'_protein.faa.gz$')
-    faa_files = faa_gz_index(tmp_dir, '.faa.gz')
-    msg = '  No. of .faa.gz files: {}'
-    logging.info(msg.format(len(faa_files.keys())))
+    faa_files = faa_gz_index(tmp_dir, ['.faa', '.faa.gz'])
+    n_files = len(faa_files.keys())
+    msg = '  No. of .faa(.gz) files: {}'
+    logging.info(msg.format(n_files))
+    if n_files == 0:
+        logging.warning('  No .faa(.gz) files found!')
     return faa_files
 
 def accession2taxid(names_dmp, faa_files, outdir):
-    """ Creating accession2taxid table
+    """ 
+    Creating accession2taxid table
     """
     outfile = os.path.join(outdir, 'accession2taxid.tsv')    
     logging.info('Creating accession2taxid table...')
@@ -141,30 +160,43 @@ def accession2taxid(names_dmp, faa_files, outdir):
             outF.write('\t'.join(line) + '\n')
     logging.info('  File written: {}'.format(outfile))
 
+def _open(infile, io='r'):
+    """
+    Read/Write (gzip'ed) files
+    """
+    if infile.endswith('.gz'):
+        return gzip.open(infile, io + 'b')
+    else:
+        return open(infile, io)
+    
 def faa_merge(faa_files, outdir, gzip_out=False):
-    """ Reading in, formatting, and merging all faa files
+    """ 
+    Reading in, formatting, and merging all faa files
     """
     outfile = os.path.join(outdir, 'gtdb_all.faa')
-    if gzip_out:
-        _open = lambda x: gzip.open(x, 'wb')
-        outfile += '.gz'
-    else:
-        _open = lambda x: open(x, 'w')
+    
     logging.info('Formating & merging faa files...')
-    with _open(outfile) as outF:
+    seq_cnt = 0
+    with _open(outfile, 'w') as outF:
         for acc,faa_file in faa_files.items():            
-            with gzip.open(faa_file) as inF:
+            with _open(faa_file, 'r') as inF:
                 for line in inF:
-                    line = line.decode('utf8')
+                    try:
+                        line = line.decode('utf8')
+                    except AttributeError:
+                        pass
                     if line.startswith('>'):
                         line = '>' + acc + ' ' + line.lstrip('>')
+                        seq_cnt += 1
                     if gzip_out:
                         line = line.encode('utf-8')
                     outF.write(line)
     logging.info('  File written: {}'.format(outfile))
+    logging.info('  No. of seqs. written: {}'.format(seq_cnt))
     
 def main(args):
-    """ Main interface
+    """ 
+    Main interface
     """
     if not os.path.isdir(args.outdir):
         os.makedirs(args.outdir)
@@ -179,9 +211,9 @@ def main(args):
     # creating combined faa fasta
     faa_merge(faa_files, args.outdir, gzip_out=args.gzip)
     # clean up
-    if os.path.isdir(args.tmpdir):
-        shutil.rmtree(args.tmpdir)
-        logging.info('Temp-dir removed: {}'.format(args.tmpdir))
+    if not args.keep_temp and os.path.isdir(args.tmpdir):
+       shutil.rmtree(args.tmpdir)
+       logging.info('Temp-dir removed: {}'.format(args.tmpdir))
                    
 if __name__ == '__main__':
     args = parser.parse_args()
