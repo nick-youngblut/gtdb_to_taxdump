@@ -160,20 +160,22 @@ def accession2taxid(names_dmp, faa_files, outdir):
             outF.write('\t'.join(line) + '\n')
     logging.info('  File written: {}'.format(outfile))
 
-def _open(infile, io='r'):
+def _open(filename, io='r'):
     """
     Read/Write (gzip'ed) files
     """
-    if infile.endswith('.gz'):
-        return gzip.open(infile, io + 'b')
+    if filename.endswith('.gz'):
+        return gzip.open(filename, io + 'b')
     else:
-        return open(infile, io)
+        return open(filename, io)
     
 def faa_merge(faa_files, outdir, gzip_out=False):
     """ 
     Reading in, formatting, and merging all faa files
     """
     outfile = os.path.join(outdir, 'gtdb_all.faa')
+    if gzip_out:
+        outfile += '.gz'
     
     logging.info('Formating & merging faa files...')
     seq_cnt = 0
