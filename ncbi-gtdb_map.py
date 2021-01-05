@@ -54,8 +54,8 @@ Notes:
 * The table can have a header (see --header) and can be compressed via gzip or bzip2.
 
 Output:
-* Output written to STDOUT
-* Output table columns
+* Output written to --outdir
+* `taxonomy_map_summary.tsv`
   * ncbi_taxonomy
     * NCBI taxonomy name
   * gtdb_taxonomy
@@ -64,12 +64,23 @@ Output:
     * Fraction of tips with that LCA
   * target_tax_level
     * The taxonomic level of the target (eg., genus or species)
+* `queries_renamed.tsv` 
+  * if --renamed
+  * Note: renaming won't work if using NCBI taxids
+  * the format of the output table will match the query table
 
 Examples:
+
 # NCBI => GTDB
 python ncbi-gtdb_map.py tests/data/ncbi-gtdb/ncbi_tax_queries.txt https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/ar122_metadata_r95.tar.gz https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/bac120_metadata_r95.tar.gz
+
 # GTDB => NCBI
 python ncbi-gtdb_map.py -q gtdb_taxonomy tests/data/ncbi-gtdb/gtdb_tax_queries.txt https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/ar122_metadata_r95.tar.gz https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/bac120_metadata_r95.tar.gz
+
+# NCBI => GTDB, using NCBI taxids
+wget ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
+tar -pzxvf taxdump.tar.gz
+python ncbi-gtdb_map.py --names-dmp taxdump/names.dmp --nodes-dmp taxdump/nodes.dmp tests/data/ncbi-gtdb/ncbi_taxid_queries.txt https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/ar122_metadata_r95.tar.gz https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/bac120_metadata_r95.tar.gz
 """
 parser = argparse.ArgumentParser(description=desc,
                                  epilog=epi,
@@ -78,6 +89,8 @@ parser.add_argument('tax_queries', metavar='tax_queries', type=str,
                     help='List of taxa to query (1 per line)')
 parser.add_argument('gtdb_metadata', metavar='gtdb_metadata', type=str, nargs='+',
                     help='>=1 gtdb-metadata file (or url)')
+parser.add_argument('-o', '--outdir', type=str, default='ncbi-gtdb',
+                    help='Output file directory (Default: %(default)s)')
 parser.add_argument('-q', '--query-taxonomy', type=str, default='ncbi_taxonomy',
                     choices=['ncbi_taxonomy', 'gtdb_taxonomy'],
                     help='Taxonomy of the query list (Default: %(default)s)')
@@ -96,6 +109,12 @@ parser.add_argument('--completeness', type=float, default=50.0,
                     help='Only include GTDB genomes w/ >=X CheckM completeness (Default: %(default)s)')
 parser.add_argument('--contamination', type=float, default=5.0,
                     help='Only include GTDB genomes w/ <X CheckM contamination (Default: %(default)s)')
+parser.add_argument('--names-dmp', type=str, default=None,
+                    help='NCBI names.dmp file. Only needed if providing NCBI taxids (Default: %(default)s)')
+parser.add_argument('--nodes-dmp', type=str, default=None,
+                    help='NCBI nodes.dmp file. Only needed if providing NCBI taxids (Default: %(default)s)')
+parser.add_argument('-r', '--rename', action='store_true', default=False,
+                    help='Write query file with requires renamed? (Default: %(default)s)')
 parser.add_argument('-p', '--procs', type=int, default=1,
                     help='No. of parallel processes (Default: %(default)s)')
 parser.add_argument('-v', '--verbose', action='store_true', default=False,
@@ -122,6 +141,50 @@ def _decode(line, infile):
     if os.path.isfile(infile) and (infile.endswith('.gz') or infile.endswith('.bz2')):
         line = line.decode('utf-8')
     return line
+
+def load_dmp(names_dmp_file, nodes_dmp_file):
+    """
+    Loading NCBI names/nodes dmp files as DAG
+    """
+    regex = re.compile(r'\t\|\t')
+    # nodes
+    logging.info('Loading file: {}'.format(names_dmp_file))
+    idx = {}    # {taxid : name}
+    with open(names_dmp_file) as inF:
+        for line in inF:
+            line = line.rstrip()
+            if line == '':
+                continue
+            line = regex.split(line)
+            idx[int(line[0])] = line[1]
+    # names
+    logging.info('Loading file: {}'.format(nodes_dmp_file))
+    G = nx.DiGraph()
+    G.add_node(0, rank = 'root', name = 'root')
+    with open(nodes_dmp_file) as inF:
+        for line in inF:
+            line = line.rstrip()
+            if line == '':
+                continue
+            line = regex.split(line)
+            taxid_child = int(line[0])
+            taxid_parent = int(line[1])
+            rank_child = line[2]
+            name_child = idx[taxid_child]
+            name_parent = idx[taxid_parent]
+            if rank_child == 'species':
+                name_child = 's__' + name_child
+            # adding node
+            G.add_node(taxid_child, rank=rank_child, name=name_child)
+            # adding edge
+            if taxid_parent == 1:
+                G.add_edge(0, taxid_child)
+            else:
+                G.add_edge(taxid_parent, taxid_child)
+    idx.clear()
+    logging.info('  No. of nodes: {}'.format(G.number_of_nodes()))
+    logging.info('  No. of edges: {}'.format(G.number_of_edges()))
+    return G
 
 def format_taxonomy(T, hierarchy, acc):
     """
@@ -323,10 +386,48 @@ def _query_tax(tax_queries, G, qtax, ttax, lca_frac=1.0, max_tips=100, verbose=F
     # return
     return idx
 
+def queries_taxid2species(queries, tax_graph):
+    logging.info('Converting query taxids to species-level classifications')
+    queries_new = {}
+    for q,cnt in queries.items():
+        try:
+            q = int(list(q)[0])
+        except ValueError:
+            msg = 'Cannot convert "{}" to an integer. Is it a taxid?'
+            raise ValueError(msg.format(list(q)[0]))
+        try:
+            node = tax_graph.nodes[q]
+        except KeyError:
+            msg = 'Cannot find "{}" in NCBI taxdump graph'
+            raise KeyError(msg.format(q))
+        # if species level, getting species level classification
+        try:
+            rank = node['rank']
+        except KeyError:
+            rank = ''
+            logging.warning('Cannot find rank for {}'.format(q))            
+        if rank == 'species':
+            queries_new[(node['name'].lower(), node['name'])] = cnt
+    queries.clear()
+    logging.info('  No. of queries: {}'.format(sum(queries_new.values())))
+    logging.info('  No. of de-rep queries: {}'.format(len(queries_new.keys())))
+    return queries_new
+                
 def query_tax(tax_queries, G, tax, lca_frac=1.0, max_tips=100,
-              column=1, header=False, prefix='', procs=1, verbose=False):
+              column=1, header=False, tax_graph=None, prefix='',
+              procs=1, verbose=False):
     """
     Querying list of taxonomic names    
+    Params:
+      tax_queries : str, text file of taxonomic queries
+      G : nx.graph, graphs for each of the 2 taxonomies
+      tax : str, either 'ncbi_taxonomy' or 'gtdb_taxonomy'
+      lca_frac : float, taxonomic "purity" of node required to consider it the LCA
+      max_tips : int, the max number of tips considered for determining the LCA
+      column : the column in the tax_queries file that contains the taxonomic classifications
+      header : does the tax_queries file contain a header?
+      tax_graph : a graph that will be used for converting NCBI taxids to species-level queries
+      prefix : add a prefix to all of the queries (eg., "s__")?      
     """
     ttax = 'ncbi_taxonomy' if tax == 'gtdb_taxonomy' else 'gtdb_taxonomy'
     # loading & batching queries
@@ -351,6 +452,9 @@ def query_tax(tax_queries, G, tax, lca_frac=1.0, max_tips=100,
             #    break
     logging.info('No. of queries: {}'.format(sum(queries.values())))
     logging.info('No. of de-rep queries: {}'.format(len(queries.keys())))
+    # converting to species-level queries if tax_graph
+    if tax_graph is not None:
+        queries = queries_taxid2species(queries, tax_graph)
     # batching
     q_batch = [[] for i in range(procs)]
     for i,q in enumerate(queries):
@@ -370,27 +474,77 @@ def query_tax(tax_queries, G, tax, lca_frac=1.0, max_tips=100,
         idx = map(func, q_batch)    
     return idx
 
-def write_table(idx, qtax):
+def write_table(idx, outdir, qtax):
     """
     Writing tab-delim table of taxonomy mappings to STDOUT
     """
-    logging.info('Writing table to STDOUT...')
-    ttax = 'ncbi_taxonomy' if qtax == 'gtdb_taxonomy' else 'gtdb_taxonomy'    
-    print('\t'.join([qtax, ttax, 'lca_frac', 'target_tax_level']))
-    for x in idx:
-        for k,v in x.items():
-            print('\t'.join([k] + v))
+    if not os.path.isdir(outdir):
+        os.makedirs(outdir)
+    outfile = os.path.join(outdir, 'taxonomy_map_summary.tsv')
+    ttax = 'ncbi_taxonomy' if qtax == 'gtdb_taxonomy' else 'gtdb_taxonomy'
+    with open(outfile, 'w') as outF:
+        outF.write('\t'.join([qtax, ttax, 'lca_frac', 'target_tax_level']) + '\n')
+        for x in idx:
+            for k,v in x.items():
+                outF.write('\t'.join([k] + v) + '\n')
+    logging.info('File written: {}'.format(outfile))
 
+def rename(tax_idx, tax_queries, outdir, column=1, header=False):
+    """
+    Renaming queries with new taxonomic classifications.
+    All entries that cannot be re-named will be excluded in the output.
+    """
+    # converting tax_idx to a simple index
+    idx = {}  # {old_tax : new_tax}
+    for x in tax_idx:
+        for k,v in x.items():
+            idx[k] = v[0]
+    # renaming queries
+    if not os.path.isdir(outdir):
+        os.makedirs(outdir)
+    outfile = os.path.join(outdir, 'queries_renamed.tsv')
+    status = {'renamed' : 0, 'excluded' : 0}
+    with _open(tax_queries) as inF, open(outfile, 'w') as outF:
+        for i,line in enumerate(inF):
+            try:
+                line = line.decode('utf-8')
+            except AttributeError:
+                pass
+            line = line.rstrip().split('\t')            
+            if header is True and i == 0:
+                pass
+            else:
+                try:
+                    line[column-1] = idx[line[column-1]]
+                    status['renamed'] += 1
+                except KeyError:
+                    status['excluded'] += 1
+                    continue
+                if line[column-1].lower() == 'unclassified':
+                    status['renamed'] -= 1
+                    status['excluded'] += 1
+                    continue
+            outF.write('\t'.join(line) + '\n')
+    # status
+    logging.info('File written: {}'.format(outfile))
+    logging.info('  No. of queries renamed: {}'.format(status['renamed']))
+    logging.info('  No. of queries excluded: {}'.format(status['excluded']))
+            
 def main(args):
     """
     Main interface
     """
-    # loading the graphs
+    # loading ncbi dmp files if provided
+    if args.names_dmp is not None and args.nodes_dmp is not None:
+        ncbi_tax = load_dmp(args.names_dmp, args.nodes_dmp)
+    else:
+        ncbi_tax = None    
+    # loading the metadata as graphs
     G = {'ncbi_taxonomy' : DiGraph_w_root(),
          'gtdb_taxonomy' : DiGraph_w_root()}
     for F in args.gtdb_metadata:
-        logging.info('Loading: {}'.format(F))
-        load_gtdb_metadata(F, G, args.completeness, args.contamination)
+       logging.info('Loading: {}'.format(F))
+       load_gtdb_metadata(F, G, args.completeness, args.contamination)        
     # querying
     idx = query_tax(args.tax_queries, G,
                     tax=args.query_taxonomy,
@@ -398,11 +552,16 @@ def main(args):
                     max_tips = args.max_tips,
                     column = args.column,
                     header = args.header,
+                    tax_graph = ncbi_tax,
                     prefix = args.prefix,
-                    procs = args.procs,                    
+                    procs = args.procs, 
                     verbose = args.verbose)
+    # re-naming taxa
+    if args.rename:
+        rename(idx, args.tax_queries, args.outdir,
+               column = args.column, header = args.header)
     # writing results
-    write_table(idx, qtax=args.query_taxonomy)
+    write_table(idx, args.outdir, qtax=args.query_taxonomy)
              
 if __name__ == '__main__':
     args = parser.parse_args()
