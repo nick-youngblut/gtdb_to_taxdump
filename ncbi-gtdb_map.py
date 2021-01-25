@@ -244,7 +244,7 @@ def load_gtdb_metadata(infile, G, completeness, contamination):
         inF = _open(infile)
         tmpdir = None
     # reading
-    stats = {'passed' : 0, 'completeness' : 0, 'contamination' : 0}
+    stats = {'passed' : 0, 'completeness' : 0, 'contamination' : 0, 'no ncbi tax' : 0}
     header = {}
     for i,line in enumerate(inF):        
         # parsing
@@ -263,6 +263,14 @@ def load_gtdb_metadata(infile, G, completeness, contamination):
         if i == 0:
             header = {x:ii for ii,x in enumerate(line)}
             continue
+        # filtering out records lacking an NCBI taxonomy
+        try:
+            X = line[header['ncbi_taxonomy']]
+        except KeyError:
+            raise KeyError('Cannot find "ncbi_taxonomy"')
+        if X == 'none':
+            stats['no ncbi tax'] += 1
+            continue        
         # filtering by checkM stats
         try:
             X = line[header['checkm_completeness']]
@@ -290,6 +298,7 @@ def load_gtdb_metadata(infile, G, completeness, contamination):
     if tmpdir is not None and os.path.isdir(tmpdir):
         shutil.rmtree(tmpdir)
     # stats
+    logging.info('  Entries lacking an NCBI taxonomy: {}'.format(stats['no ncbi tax']))
     logging.info('  Completeness-filtered entries: {}'.format(stats['completeness']))
     logging.info('  Contamination-filtered entries: {}'.format(stats['contamination']))
     logging.info('  Entries used: {}'.format(stats['passed']))    
@@ -343,10 +352,15 @@ def lca_many_nodes(G, nodes, lca_frac=1.0):
     ### note: species is lowest possible level
     for i in range(len(T)-1)[::-1]:
         lca = lca_frac_pass(T[i], lca_frac)
-        if lca[0] is not None:
-            lca[0] = G.nodes[lca[0]]['orig_name']
+        if lca[0] is not None and lca[0] != 'root':
+            try:
+                lca[0] = G.nodes[lca[0]]['orig_name']
+            except KeyError:
+                msg = 'Cannot find "orig_name" for "{}"'
+                raise KeyError(msg.format(lca[0]))
             return lca + [hierarchy[i]]
-    raise ValueError('Cannot find LCA for nodes: {}'.format(','.join(nodes)))
+    logging.warning('Cannot find LCA for nodes: {}'.format(','.join(nodes)))
+    return ['unclassified', 'NA', 'NA']
 
 def _query_tax(tax_queries, G, qtax, ttax, lca_frac=1.0, max_tips=100, verbose=False):
     """
