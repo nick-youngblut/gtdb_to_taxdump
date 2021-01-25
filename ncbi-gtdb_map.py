@@ -145,6 +145,11 @@ def _decode(line, infile):
 def load_dmp(names_dmp_file, nodes_dmp_file):
     """
     Loading NCBI names/nodes dmp files as DAG
+    Arguments:
+      names_dmp_file : str, names.dmp file
+      nodes_dmp_file : str, nodes.dmp file 
+    Return:
+      network.DiGraph object
     """
     regex = re.compile(r'\t\|\t')
     # nodes
@@ -189,6 +194,12 @@ def load_dmp(names_dmp_file, nodes_dmp_file):
 def format_taxonomy(T, hierarchy, acc):
     """
     Formatting taxonomy to conform to a set hierarchy
+    Arguments:
+      T : iterable, taxonomy
+      hierarchy : taxonomic hierarchy 
+      acc : accession
+    Return:
+      [taxonomy_level1, taxonomy_level2, ...]
     """    
     Tx = ['' for i in range(len(hierarchy))]
     for i,x in enumerate(hierarchy[:-1]):
@@ -202,6 +213,14 @@ def format_taxonomy(T, hierarchy, acc):
 def add_taxonomy(line, line_num, header, G, tax='ncbi_taxonomy'):
     """
     Adding taxonomy nodes/edits to the graph
+    Arguments:
+      line : iterable, line of metadata file
+      line_num : int, line number of metadata file
+      header : dict, index of header for metadata file
+      G : taxonomy graph
+      tax : ncbi or gtdb?
+    Return:
+      In-place edit of G
     """
     hierarchy = ['domain', 'phylum', 'class', 'order',
                  'family', 'genus', 'species', 'strain']
@@ -222,6 +241,10 @@ def add_taxonomy(line, line_num, header, G, tax='ncbi_taxonomy'):
 def dl_uncomp(url):
     """
     Downloading and extracting GTDB metadata tarball
+    Arguments:
+      url : str, url of GTDB metadata tarball
+    Return: 
+      (metadata_filehandle, output_directory)
     """
     file_tmp = urllib.request.urlretrieve(url, filename=None)[0]
     tmpdir = os.path.dirname(file_tmp)
@@ -306,7 +329,7 @@ def load_gtdb_metadata(infile, G, completeness, contamination):
 
 def DiGraph_w_root():
     """
-    directed graph with a root node
+    Create directed  graph with a root node
     """
     G = nx.DiGraph()
     G.add_node('root')
@@ -318,11 +341,16 @@ def lca_frac_pass(D, lca_frac):
     "homogeneity" means the fraction of tips with the target LCA 
       (eg., 90% of all tips have this LCA).
     If the cutoff is not passed, then returning [None,None]
+    Arguments:
+      D : dict, LCA dict
+      lca_frac : float, fraction of decendents that must have the same taxonomy
     """
     D = Counter(D)
     try:
         mc = D.most_common(1)
     except IndexError:
+        return [None,None]
+    if re.search(r'^[pcofgs]__$', mc[0][0]):
         return [None,None]
     try:
         frac = mc[0][1] / float(sum(D.values()))
