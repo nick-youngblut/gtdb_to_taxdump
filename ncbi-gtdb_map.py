@@ -94,7 +94,7 @@ parser.add_argument('-o', '--outdir', type=str, default='ncbi-gtdb',
 parser.add_argument('-q', '--query-taxonomy', type=str, default='ncbi_taxonomy',
                     choices=['ncbi_taxonomy', 'gtdb_taxonomy'],
                     help='Taxonomy of the query list (Default: %(default)s)')
-parser.add_argument('-f', '--fraction', type=float, default=0.51,
+parser.add_argument('-f', '--fraction', type=float, default=0.90,
                     help='Homogeneity of LCA (fraction) in order to be used (Default: %(default)s)')
 parser.add_argument('-m', '--max-tips', type=int, default=100,
                     help='Max no. of tips used for LCA determination. If more, subsampling w/out replacement (Default: %(default)s)')
@@ -205,7 +205,7 @@ def format_taxonomy(T, hierarchy, acc):
     Tx = ['' for i in range(len(hierarchy))]
     for i,x in enumerate(hierarchy[:-1]):
         if len(T) < i + 1 or T[i] == '' or T[i] == 'unclassified' or regex.search(T[i]):
-            Tx[i] = '__'.join([x[0], acc])
+            Tx[i] = '__'.join(['X' + x[0], acc])
         else:
             Tx[i] = T[i]
     Tx[-1] = acc
@@ -294,7 +294,7 @@ def load_gtdb_metadata(infile, G, completeness, contamination):
             raise KeyError('Cannot find "ncbi_taxonomy"')
         if X == 'none':
             stats['no ncbi tax'] += 1
-            continue        
+            continue
         # filtering by checkM stats
         try:
             X = line[header['checkm_completeness']]
@@ -351,7 +351,7 @@ def lca_frac_pass(D, lca_frac):
         mc = D.most_common(1)
     except IndexError:
         return [None,None]
-    if re.search(r'^[pcofgs]__$', mc[0][0]):
+    if re.search(r'^[Xx][pcofgs]__', mc[0][0]):
         return [None,None]
     try:
         frac = mc[0][1] / float(sum(D.values()))
@@ -401,7 +401,7 @@ def _query_tax(tax_queries, G, qtax, ttax, lca_frac=1.0, max_tips=100, verbose=F
     # iterating queries
     for Q in tax_queries:
         tips = []
-        try:
+        try:            
             # getting descendents of the node
             tips = [desc for desc in descendants(G[qtax], Q[0]) if \
                     G[qtax].nodes[desc]['taxonomy'] == 'strain']
