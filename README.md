@@ -5,11 +5,17 @@ gtdb_to_taxdump
 
 Convert GTDB taxonomy to NCBI taxdump format.
 
-* Version: 0.1.4
+* Version: 0.1.5
 * Authors:
   * Nick Youngblut <nyoungb2@gmail.com>
 * Maintainers:
   * Nick Youngblut <nyoungb2@gmail.com>
+
+# WARNING
+
+> There was a serious bug with `ncbi-gtdb_map.py` prior to version 0.1.5.
+  Many of the taxonomic classifications are likely incorrect.
+  Please re-run the analysis. I'm sorry for any inconvenience.
 
 # Summary
 

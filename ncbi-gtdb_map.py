@@ -200,10 +200,11 @@ def format_taxonomy(T, hierarchy, acc):
       acc : accession
     Return:
       [taxonomy_level1, taxonomy_level2, ...]
-    """    
+    """
+    regex = re.compile(r'^[dpcofgs]__$')
     Tx = ['' for i in range(len(hierarchy))]
     for i,x in enumerate(hierarchy[:-1]):
-        if len(T) < i + 1 or T[i] == '' or T[i] == 'unclassified':
+        if len(T) < i + 1 or T[i] == '' or T[i] == 'unclassified' or regex.search(T[i]):
             Tx[i] = '__'.join([x[0], acc])
         else:
             Tx[i] = T[i]
@@ -229,7 +230,7 @@ def add_taxonomy(line, line_num, header, G, tax='ncbi_taxonomy'):
     T = line[header[tax]].split(';')
     T = format_taxonomy(T, hierarchy, acc)
     # adding taxonomy to graph
-    for i in range(len(hierarchy)):
+    for i in range(len(hierarchy)):        
         # adding node
         G[tax].add_node(T[i].lower(), taxonomy=hierarchy[i], orig_name=T[i])
         # adding edge
