@@ -37,7 +37,7 @@ will create different taxIDs.
 * `python >= 3.6`
 * Only for `gtdb_to_diamond.py`
   * `diamond`
-* Only for `ncbi-gtdb_map.py`
+* For `ncbi-gtdb_map.py` & `lineage2taxid.py`
   * `networkx >= 2.4`
 
 # Usage
@@ -85,6 +85,10 @@ wget https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/ar122_m
   * Use to create a diamond database (with taxonomy) of genes from GTDB genomes
   * This can be used to taxonomically classify reads and amino acid sequences with diamond & GTDB
   * See the script help docs for examples on usage
+* `lineage2taxid.py`
+  * Use to get the taxids for a set of lineages (eg., from GTDB-Tk) 
+  * This is somewhat of a reverse of `gtdb_to_taxdump.py`
+  * The script can work with GTDB or NCBI tax dumps
 
 # GTDB website
 
