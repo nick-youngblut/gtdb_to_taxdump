@@ -114,7 +114,7 @@ parser.add_argument('--names-dmp', type=str, default=None,
 parser.add_argument('--nodes-dmp', type=str, default=None,
                     help='NCBI nodes.dmp file. Only needed if providing NCBI taxids (Default: %(default)s)')
 parser.add_argument('-r', '--rename', action='store_true', default=False,
-                    help='Write query file with requires renamed? (Default: %(default)s)')
+                    help='Write query file with queries renamed? (Default: %(default)s)')
 parser.add_argument('-p', '--procs', type=int, default=1,
                     help='No. of parallel processes (Default: %(default)s)')
 parser.add_argument('-v', '--verbose', action='store_true', default=False,
@@ -499,6 +499,7 @@ def query_tax(tax_queries, G, tax, lca_frac=1.0, max_tips=100,
     if tax_graph is not None:
         queries = queries_taxid2species(queries, tax_graph)
     # batching
+    logging.info('Batching queries...')
     q_batch = [[] for i in range(procs)]
     for i,q in enumerate(queries):
         q_batch[i % procs].append(q)

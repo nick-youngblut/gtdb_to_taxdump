@@ -89,6 +89,13 @@ wget https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/ar122_m
   * Use to get the taxids for a set of lineages (eg., from GTDB-Tk) 
   * This is somewhat of a reverse of `gtdb_to_taxdump.py`
   * The script can work with GTDB or NCBI tax dumps
+* `./uniref_utils/`
+  * `unirefxml2clust50-90idx.py`
+    * Mapping UniRef90 cluster IDs to UniRef50 cluster IDs
+  * `unirefxml2fasta.py`
+    * Creating gene sequence fasta from xml
+  * `unirefxml2tax.py`
+    * Converting the xml to a table of gene taxonomies
 
 # GTDB website
 
