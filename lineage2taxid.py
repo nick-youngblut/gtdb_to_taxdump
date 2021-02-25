@@ -166,6 +166,9 @@ def parse_lineage_table(table_file, lineage_column, G,
             lineage = line[header[lineage_column]]
             taxid,rank = lineage2taxid(lineage, G)
             print('\t'.join(line + [str(taxid), str(rank)]))
+            # status
+            if i > 0 and (i+1) % 100 == 0:
+                logging.info('  Records processed: {}'.format(i+1))
             
 def main(args):
     """
