@@ -82,6 +82,9 @@ python ncbi-gtdb_map.py -q gtdb_taxonomy tests/data/ncbi-gtdb/gtdb_tax_queries.t
 wget ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
 tar -pzxvf taxdump.tar.gz
 python ncbi-gtdb_map.py --names-dmp taxdump/names.dmp --nodes-dmp taxdump/nodes.dmp tests/data/ncbi-gtdb/ncbi_taxid_queries.txt https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/ar122_metadata_r95.tar.gz https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/bac120_metadata_r95.tar.gz
+
+# NCBI => GTDB; no lineage prefix ([dpcofgs]__)
+python ncbi-gtdb_map.py -N tests/data/ncbi-gtdb/ncbi_tax_queries_noPrefix.txt https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/ar122_metadata_r95.tar.gz https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/bac120_metadata_r95.tar.gz
 """
 parser = argparse.ArgumentParser(description=desc,
                                  epilog=epi,
@@ -106,6 +109,8 @@ parser.add_argument('-H', '--header', action='store_true', default=False,
                     help='Header in table of queries (Default: %(default)s)?')
 parser.add_argument('-P', '--prefix', type=str, default='',
                     help='Add prefix to all queries such as "s__" (Default: %(default)s)')
+parser.add_argument('-N', '--no-prefix', action='store_true', default=False,
+                    help='Strip off any [dpcofgs]__ taxonomic prefixes? (Default: %(default)s)')
 parser.add_argument('--completeness', type=float, default=50.0,
                     help='Only include GTDB genomes w/ >=X CheckM completeness (Default: %(default)s)')
 parser.add_argument('--contamination', type=float, default=5.0,
@@ -143,7 +148,7 @@ def _decode(line, infile):
         line = line.decode('utf-8')
     return line
 
-def load_dmp(names_dmp_file, nodes_dmp_file):
+def load_dmp(names_dmp_file, nodes_dmp_file, no_prefix=False):
     """
     Loading NCBI names/nodes dmp files as DAG
     Arguments:
@@ -192,7 +197,7 @@ def load_dmp(names_dmp_file, nodes_dmp_file):
     logging.info('  No. of edges: {}'.format(G.number_of_edges()))
     return G
 
-def format_taxonomy(T, hierarchy, acc):
+def format_taxonomy(T, hierarchy, acc, no_prefix=False):
     """
     Formatting taxonomy to conform to a set hierarchy
     Arguments:
@@ -203,16 +208,20 @@ def format_taxonomy(T, hierarchy, acc):
       [taxonomy_level1, taxonomy_level2, ...]
     """
     regex = re.compile(r'^[dpcofgs]__$')
+    regex2 = re.compile(r'^X*[dpcofgs]__')    
     Tx = ['' for i in range(len(hierarchy))]
     for i,x in enumerate(hierarchy[:-1]):
-        if len(T) < i + 1 or T[i] == '' or T[i] == 'unclassified' or regex.search(T[i]):
+        if len(T) < i + 1 or T[i] == '' or T[i] == 'unclassified' \
+           or regex.search(T[i]):
             Tx[i] = '__'.join(['X' + x[0], acc])
         else:
             Tx[i] = T[i]
+        if no_prefix is True:
+            Tx[i] = regex2.sub('', Tx[i])
     Tx[-1] = acc
     return Tx
 
-def add_taxonomy(line, line_num, header, G, tax='ncbi_taxonomy'):
+def add_taxonomy(line, line_num, header, G, tax='ncbi_taxonomy', no_prefix=False):
     """
     Adding taxonomy nodes/edits to the graph
     Arguments:
@@ -229,7 +238,7 @@ def add_taxonomy(line, line_num, header, G, tax='ncbi_taxonomy'):
     # checking taxonomy format
     acc = line[header['accession']]
     T = line[header[tax]].split(';')
-    T = format_taxonomy(T, hierarchy, acc)
+    T = format_taxonomy(T, hierarchy, acc, no_prefix=no_prefix)
     # adding taxonomy to graph
     for i in range(len(hierarchy)):        
         # adding node
@@ -258,7 +267,7 @@ def dl_uncomp(url):
     inF = open(os.path.join(outdir, tar.getnames()[0]))
     return inF,outdir
             
-def load_gtdb_metadata(infile, G, completeness, contamination):
+def load_gtdb_metadata(infile, G, completeness, contamination, no_prefix=False):
     """
     Loading gtdb taxonomy & adding to DAG 
     """
@@ -313,9 +322,11 @@ def load_gtdb_metadata(infile, G, completeness, contamination):
         if float(X) >= contamination:
             stats['contamination'] += 1
             continue
-        # Adding taxonomies to graphs
-        add_taxonomy(line, i, header, G, tax='gtdb_taxonomy')
-        add_taxonomy(line, i, header, G, tax='ncbi_taxonomy')
+        # Adding taxonomies to graphs        
+        add_taxonomy(line, i, header, G, tax='gtdb_taxonomy',
+                     no_prefix=no_prefix)
+        add_taxonomy(line, i, header, G, tax='ncbi_taxonomy',
+                     no_prefix=no_prefix)
         stats['passed'] += 1
     # closing
     try:
@@ -605,7 +616,8 @@ def main(args):
     G = {'ncbi_taxonomy' : DiGraph_w_root(),
          'gtdb_taxonomy' : DiGraph_w_root()}
     for F in args.gtdb_metadata:
-       load_gtdb_metadata(F, G, args.completeness, args.contamination)        
+       load_gtdb_metadata(F, G, args.completeness, args.contamination,
+                          no_prefix=args.no_prefix)
     # querying
     idx = query_tax(args.tax_queries, G,
                     tax=args.query_taxonomy,
