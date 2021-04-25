@@ -20,6 +20,7 @@ from collections import Counter
 # 3rd party
 import networkx as nx
 from networkx.algorithms.dag import descendants
+from networkx.algorithms.dag import ancestors
 from networkx.algorithms.lowest_common_ancestors import lowest_common_ancestor
 from networkx.algorithms.shortest_paths.unweighted import bidirectional_shortest_path
 
@@ -261,6 +262,7 @@ def load_gtdb_metadata(infile, G, completeness, contamination):
     """
     Loading gtdb taxonomy & adding to DAG 
     """
+    logging.info('Loading: {}'.format(infile))
     # input as file or url
     try:
         inF,tmpdir = dl_uncomp(infile)
@@ -268,7 +270,8 @@ def load_gtdb_metadata(infile, G, completeness, contamination):
         inF = _open(infile)
         tmpdir = None
     # reading
-    stats = {'passed' : 0, 'completeness' : 0, 'contamination' : 0, 'no ncbi tax' : 0}
+    stats = {'passed' : 0, 'completeness' : 0,
+             'contamination' : 0, 'no ncbi tax' : 0}
     header = {}
     for i,line in enumerate(inF):        
         # parsing
@@ -322,9 +325,12 @@ def load_gtdb_metadata(infile, G, completeness, contamination):
     if tmpdir is not None and os.path.isdir(tmpdir):
         shutil.rmtree(tmpdir)
     # stats
-    logging.info('  Entries lacking an NCBI taxonomy: {}'.format(stats['no ncbi tax']))
-    logging.info('  Completeness-filtered entries: {}'.format(stats['completeness']))
-    logging.info('  Contamination-filtered entries: {}'.format(stats['contamination']))
+    msg = '  Entries lacking an NCBI taxonomy: {}'
+    logging.info(msg.format(stats['no ncbi tax']))
+    msg = '  Completeness-filtered entries: {}'
+    logging.info(msg.format(stats['completeness']))
+    msg = '  Contamination-filtered entries: {}'
+    logging.info(msg.format(stats['contamination']))
     logging.info('  Entries used: {}'.format(stats['passed']))    
     return G
 
@@ -387,13 +393,17 @@ def lca_many_nodes(G, nodes, lca_frac=1.0):
             except KeyError:
                 msg = 'Cannot find "orig_name" for "{}"'
                 raise KeyError(msg.format(lca[0]))
-            return lca + [hierarchy[i]]
+            lineage = [[y for y in x.keys()][0] for x in T[:i+1]]
+            return lca + [hierarchy[i], ';'.join(lineage[1:])]
     logging.warning('Cannot find LCA for nodes: {}'.format(','.join(nodes)))
-    return ['unclassified', 'NA', 'NA']
+    return ['unclassified', 'NA', 'NA', 'NA']
 
-def _query_tax(tax_queries, G, qtax, ttax, lca_frac=1.0, max_tips=100, verbose=False):
+def _query_tax(tax_queries, G, qtax, ttax, lca_frac=1.0, max_tips=100,
+               verbose=False):
     """
     Querying list of taxonomic names
+    Return:
+      {query : [new_taxname, lca_score, rank]}
     """
     pid = os.getpid()
     idx = {}
@@ -416,12 +426,13 @@ def _query_tax(tax_queries, G, qtax, ttax, lca_frac=1.0, max_tips=100, verbose=F
             LCA = lca_many_nodes(G[ttax], tips, lca_frac=lca_frac)
             idx[Q[1]] = LCA
         else:
-            idx[Q[1]] = ['unclassified', 'NA', 'NA']
+            idx[Q[1]] = ['unclassified', 'NA', 'NA', 'NA']
         # status
         x = status['hit'] + status['no hit']
         if verbose and x % 1000 == 0:
             frac = round(float(x) / len(tax_queries) * 100, 2)
-            logging.info('PID{}: Queries processed: {} ({}%)'.format(pid, x, frac))       
+            msg = 'PID{}: Queries processed: {} ({}%)'
+            logging.info(msg.format(pid, x, frac))       
     # status
     msg = 'PID{}: Finished! Queries={}, Hits={}, No-Hits={}'
     logging.info(msg.format(pid, status['hit'] + status['no hit'],
@@ -430,6 +441,9 @@ def _query_tax(tax_queries, G, qtax, ttax, lca_frac=1.0, max_tips=100, verbose=F
     return idx
 
 def queries_taxid2species(queries, tax_graph):
+    """
+    If queries were taxids, getting taxonomic classification for each query
+    """
     logging.info('Converting query taxids to species-level classifications')
     queries_new = {}
     for q,cnt in queries.items():
@@ -442,7 +456,8 @@ def queries_taxid2species(queries, tax_graph):
             node = tax_graph.nodes[q]
         except KeyError:
             msg = 'Cannot find "{}" in NCBI taxdump graph'
-            raise KeyError(msg.format(q))
+            logging.warning(msg.format(q))
+            continue
         # if species level, getting species level classification
         try:
             rank = node['rank']
@@ -450,7 +465,7 @@ def queries_taxid2species(queries, tax_graph):
             rank = ''
             logging.warning('Cannot find rank for {}'.format(q))            
         if rank == 'species':
-            queries_new[(node['name'].lower(), node['name'])] = cnt
+            queries_new[(node['name'].lower(), node['name'])] = cnt        
     queries.clear()
     logging.info('  No. of queries: {}'.format(sum(queries_new.values())))
     logging.info('  No. of de-rep queries: {}'.format(len(queries_new.keys())))
@@ -471,6 +486,8 @@ def query_tax(tax_queries, G, tax, lca_frac=1.0, max_tips=100,
       header : does the tax_queries file contain a header?
       tax_graph : a graph that will be used for converting NCBI taxids to species-level queries
       prefix : add a prefix to all of the queries (eg., "s__")?      
+    Return:
+      {(node_name_lowercase, node_name) : count}   
     """
     ttax = 'ncbi_taxonomy' if tax == 'gtdb_taxonomy' else 'gtdb_taxonomy'
     # loading & batching queries
@@ -527,7 +544,8 @@ def write_table(idx, outdir, qtax):
     outfile = os.path.join(outdir, 'taxonomy_map_summary.tsv')
     ttax = 'ncbi_taxonomy' if qtax == 'gtdb_taxonomy' else 'gtdb_taxonomy'
     with open(outfile, 'w') as outF:
-        outF.write('\t'.join([qtax, ttax, 'lca_frac', 'target_tax_level']) + '\n')
+        outF.write('\t'.join([qtax, ttax, 'lca_frac',
+                              'target_tax_level', 'lineage']) + '\n')
         for x in idx:
             for k,v in x.items():
                 outF.write('\t'.join([k] + v) + '\n')
@@ -587,7 +605,6 @@ def main(args):
     G = {'ncbi_taxonomy' : DiGraph_w_root(),
          'gtdb_taxonomy' : DiGraph_w_root()}
     for F in args.gtdb_metadata:
-       logging.info('Loading: {}'.format(F))
        load_gtdb_metadata(F, G, args.completeness, args.contamination)        
     # querying
     idx = query_tax(args.tax_queries, G,
