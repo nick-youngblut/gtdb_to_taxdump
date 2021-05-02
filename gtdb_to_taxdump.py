@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 from __future__ import print_function
 # batteries
-import sys,os
+import os
+import sys
+import gzip
+import bz2
 import argparse
 import logging
 import csv
@@ -16,7 +19,8 @@ Convert Genome Taxonomy Database (GTDB) taxonomy files
 to NCBI taxdump format (names.dmp & nodes.dmp).
 
 The input can be >=1 tsv file with the GTDB taxonomy
-or >=1 url to the tsv file(s).
+or >=1 url to the tsv file(s). Input can be uncompressed
+or gzip'ed.
 
 The input table format should be >=2 columns,
 (Column1 = accession, Column2 = gtdb_taxonomy),
@@ -145,12 +149,10 @@ class Graph(object):
             # names
             names.append([str(self.__graph_nodeIDs[child]), child, '',
                           'scientific name'])
-            #outName.write('\t|\t'.join(names) + '\t|\n')
             # nodes
             rank = self.get_rank(child)
             nodes.append([self.__graph_nodeIDs[child], self.__graph_nodeIDs[vertex],
                           rank, embl_code, 0, 0, 11, 1, 1, 0, 0, 0])
-            #outNode.write('\t|\t'.join([str(x) for x in nodes]) + '\t|\n')
             # children
             self._write_dmp_iter(child, names, nodes, embl_code)
             
@@ -263,31 +265,68 @@ def find_all_paths(self, start_vertex, end_vertex, path=[]):
                 paths.append(p)
     return paths
 
-def load_gtdb_tax(infile, graph):
-    """ loading gtdb taxonomy & adding to DAG """
-
+def _decode(x):
+    """
+    Decoding input, if needed
+    """
     try:
-        ftpstream = urllib.request.urlopen(infile)
-        inF = csv.reader(codecs.iterdecode(ftpstream, 'utf-8'))
-    except ValueError:
-        inF = open(infile)
-        
+        x = x.decode('utf-8')
+    except AttributeError:
+        pass
+    return x
+
+def _open(infile, mode='rb'):
+    """
+    Openning of input, regardless of compression
+    """
+    if infile.endswith('.bz2'):
+        return bz2.open(infile, mode)
+    elif infile.endswith('.gz'):
+        return gzip.open(infile, mode)
+    else:
+        return open(infile)
+
+def get_url_data(url):
+    """
+    Downloading data from url; assuming gzip
+    """
+    req = urllib.request.Request(url)
+    req.add_header('Accept-Encoding', 'gzip')
+    response = urllib.request.urlopen(req)
+    content = gzip.decompress(response.read())
+    return content.splitlines()
+
+def load_gtdb_tax(infile, graph):
+    """
+    loading gtdb taxonomy & adding to DAG
+    """
+    # url or file download/open
+    try:        
+        inF = get_url_data(infile)
+    except (OSError,ValueError) as e:
+        try:
+            ftpstream = urllib.request.urlopen(infile)
+            inF = csv.reader(codecs.iterdecode(ftpstream, 'utf-8'))
+        except ValueError:
+            inF = _open(infile)
+            
+    # parsing lines
     for i,line in enumerate(inF):
-        # parsing
         try:
             line = line.rstrip()
         except AttributeError:
             line = line[0].rstrip()
         if line == '':
             continue
+        line = _decode(line)            
         line = line.split('\t')
         if len(line) < 2:
             msg = 'Line{} does not contain >=2 columns'
-            raise ValueError(msg.format(i))            
+            raise ValueError(msg.format(i+1))  
         tax = line[1].split(';')
         if len(tax) < 7:
             msg = 'WARNING: Line{}: taxonomy length is <7'
-            logging.info(msg.format(i))
+            logging.info(msg.format(i+1))
         tax.append(line[0])
         # adding taxonomy to graph
         for ii,cls in enumerate(tax):

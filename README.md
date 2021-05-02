@@ -48,8 +48,17 @@ Example (GTDB release95):
 
 ```
 ./gtdb_to_taxdump.py \
-  https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/ar122_taxonomy_r95.tsv \
-  https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/bac120_taxonomy_r95.tsv \
+  https://data.gtdb.ecogenomic.org/releases/release202/202.0/ar122_taxonomy_r202.tsv.gz \
+  https://data.gtdb.ecogenomic.org/releases/release202/202.0/bac120_taxonomy_r202.tsv.gz \
+  > taxID_info.tsv
+```
+
+Example (GTDB release95):
+
+```
+./gtdb_to_taxdump.py \
+  https://data.gtdb.ecogenomic.org/releases/release95/95.0/ar122_taxonomy_r95.tsv.gz \
+  https://data.gtdb.ecogenomic.org/releases/release95/95.0/bac120_taxonomy_r95.tsv.gz \
   > taxID_info.tsv
 ```
 
