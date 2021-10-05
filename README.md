@@ -44,7 +44,7 @@ will create different taxIDs.
 
 See `gtdb_to_taxdump.py -h`
 
-Example (GTDB release95):
+Example (GTDB release202):
 
 ```
 ./gtdb_to_taxdump.py \
