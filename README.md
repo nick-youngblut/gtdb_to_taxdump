@@ -1,4 +1,6 @@
 [![gtdb_to_taxdump](https://github.com/nick-youngblut/gtdb_to_taxdump/actions/workflows/pythonpackage.yml/badge.svg)](https://github.com/nick-youngblut/gtdb_to_taxdump/actions/workflows/pythonpackage.yml)
+[![Upload Python Package](https://github.com/nick-youngblut/gtdb_to_taxdump/actions/workflows/python-publish.yml/badge.svg)](https://github.com/nick-youngblut/gtdb_to_taxdump/actions/workflows/python-publish.yml)
+[![PyPI version](https://badge.fury.io/py/gtdb-to-taxdump.svg)](https://badge.fury.io/py/gtdb-to-taxdump)
 
 gtdb_to_taxdump
 ===============
