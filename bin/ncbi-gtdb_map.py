@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
-# batteries
+# import
+## batteries
 import os
 import sys
 import re
@@ -17,13 +18,16 @@ import codecs
 import functools
 import multiprocessing as mp
 from collections import Counter
-# 3rd party
+## 3rd party
 import networkx as nx
 from networkx.algorithms.dag import descendants
 from networkx.algorithms.dag import ancestors
 from networkx.algorithms.lowest_common_ancestors import lowest_common_ancestor
 from networkx.algorithms.shortest_paths.unweighted import bidirectional_shortest_path
+## package
+import gtdb2td
 
+# argparse
 desc = 'Mapping between NCBI & GTDB taxonomies'
 epi = """DESCRIPTION:
 Using the GTDB metadata table (which contains both NCBI and GTDB taxonomies)
@@ -128,25 +132,6 @@ parser.add_argument('-v', '--verbose', action='store_true', default=False,
 parser.add_argument('--version', action='version', version='0.0.1')
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
-
-def _open(infile):
-    """
-    Openning of input, regardless of compression
-    """
-    if infile.endswith('.bz2'):
-        return bz2.open(infile, 'rb')
-    elif infile.endswith('.gz'):
-        return gzip.open(infile, 'rb')
-    else:
-        return open(infile)
-
-def _decode(line, infile):
-    """
-    Decoding input, depending on the file extension
-    """
-    if os.path.isfile(infile) and (infile.endswith('.gz') or infile.endswith('.bz2')):
-        line = line.decode('utf-8')
-    return line
 
 def load_dmp(names_dmp_file, nodes_dmp_file, no_prefix=False):
     """
@@ -276,7 +261,7 @@ def load_gtdb_metadata(infile, G, completeness, contamination, no_prefix=False):
     try:
         inF,tmpdir = dl_uncomp(infile)
     except ValueError:
-        inF = _open(infile)
+        inF = gtdb2td.Utils.Open(infile)
         tmpdir = None
     # reading
     stats = {'passed' : 0, 'completeness' : 0,
@@ -284,7 +269,7 @@ def load_gtdb_metadata(infile, G, completeness, contamination, no_prefix=False):
     header = {}
     for i,line in enumerate(inF):        
         # parsing
-        line = _decode(line, infile)
+        line = gtdb2td.Utils.Decode(line)
         try:
             line = line.rstrip()
         except AttributeError:
@@ -505,11 +490,11 @@ def query_tax(tax_queries, G, tax, lca_frac=1.0, max_tips=100,
     logging.info('Reading in queries: {}'.format(tax_queries))
     n_queries = 0
     queries = {}
-    with _open(tax_queries) as inF:
+    with gtdb2td.Utils.Open(tax_queries) as inF:
         for i,line in enumerate(inF):
             if i == 0 and header:
                 continue
-            line = _decode(line, tax_queries)
+            line = gtdb2td.Utils.Decode(line)
             line = line.rstrip().split('\t')[column - 1]
             if line == '' or line == 'root':
                 continue
@@ -577,10 +562,10 @@ def rename(tax_idx, tax_queries, outdir, column=1, header=False):
         os.makedirs(outdir)
     outfile = os.path.join(outdir, 'queries_renamed.tsv')
     status = {'renamed' : 0, 'excluded' : 0}
-    with _open(tax_queries) as inF, open(outfile, 'w') as outF:
+    with gtdb2td.Utils.Open(tax_queries) as inF, open(outfile, 'w') as outF:
         for i,line in enumerate(inF):
             try:
-                line = line.decode('utf-8')
+                line = gtdb2td.Utils.Decode(line)
             except AttributeError:
                 pass
             line = line.rstrip().split('\t')            

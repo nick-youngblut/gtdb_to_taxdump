@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# import
+## batteries
 from __future__ import print_function
 import os
 import sys
@@ -7,11 +9,13 @@ import gzip
 import bz2
 import argparse
 import logging
-# 3rd party
+## 3rd party
 import networkx as nx
 from networkx.algorithms.dag import descendants
 from networkx.algorithms.lowest_common_ancestors import lowest_common_ancestor
 from networkx.algorithms.shortest_paths.unweighted import bidirectional_shortest_path
+## package
+import gtdb_to_taxdump as gtdb2td
 
 # logging
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
@@ -63,27 +67,6 @@ parser.add_argument('--taxid-rank-column', type=str, default='taxid_rank',
 parser.add_argument('--version', action='version', version='0.0.1')
 
 # functions
-def _open(infile, mode='rb'):
-    """
-    Openning of input, regardless of compression
-    """
-    if infile.endswith('.bz2'):
-        return bz2.open(infile, mode)
-    elif infile.endswith('.gz'):
-        return gzip.open(infile, mode)
-    else:
-        return open(infile)
-
-def _decode(x):
-    """
-    Decoding input, if needed
-    """
-    try:
-        x = x.decode('utf-8')
-    except AttributeError:
-        pass
-    return x
-
 def load_dmp(names_dmp_file, nodes_dmp_file):
     """
     Loading NCBI names/nodes dmp files as DAG
@@ -97,7 +80,7 @@ def load_dmp(names_dmp_file, nodes_dmp_file):
     # nodes
     logging.info('Loading file: {}'.format(names_dmp_file))
     idx = {}    # {taxid : name}
-    with open(names_dmp_file) as inF:
+    with gtdb2td.Utils.Open(names_dmp_file) as inF:
         for line in inF:
             line = line.rstrip()
             if line == '':
@@ -108,7 +91,7 @@ def load_dmp(names_dmp_file, nodes_dmp_file):
     logging.info('Loading file: {}'.format(nodes_dmp_file))
     G = nx.DiGraph()
     G.add_node(0, rank = 'root', name = 'root')
-    with open(nodes_dmp_file) as inF:
+    with gtdb2td.Utils.Open(nodes_dmp_file) as inF:
         for line in inF:
             line = line.rstrip()
             if line == '':
@@ -149,9 +132,9 @@ def parse_lineage_table(table_file, lineage_column, G,
     """
     logging.info('Parsing file: {}'.format(table_file))
     header = {}
-    with _open(table_file) as inF:
+    with gtdb2td.Utils.Open(table_file) as inF:
         for i,line in enumerate(inF):
-            line = _decode(line).rstrip().split('\t')
+            line = gtdb2td.Utils.Decode(line).rstrip().split('\t')
             # header
             if i == 0:
                 header = {x:ii for ii,x in enumerate(line)}

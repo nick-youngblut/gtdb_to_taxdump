@@ -1,6 +1,7 @@
 #!/usr/bin/env python
+# import
 from __future__ import print_function
-# batteries
+## batteries
 import os
 import re
 import sys
@@ -13,8 +14,10 @@ import urllib.request
 import codecs
 import tarfile
 from collections import OrderedDict
+## package
+import gtdb_to_taxdump as gtdb2td
 
-
+# argparse
 desc = 'Converting GTDB taxonomy to input for "diamond makedb --taxonmap"'
 epi = """DESCRIPTION:
 Convert Genome Taxonomy Database (GTDB) representative genome
@@ -159,15 +162,6 @@ def accession2taxid(names_dmp, faa_files, outdir):
             line = [acc_base, accession, str(taxID), '']
             outF.write('\t'.join(line) + '\n')
     logging.info('  File written: {}'.format(outfile))
-
-def _open(filename, io='r'):
-    """
-    Read/Write (gzip'ed) files
-    """
-    if filename.endswith('.gz'):
-        return gzip.open(filename, io + 'b')
-    else:
-        return open(filename, io)
     
 def faa_merge(faa_files, outdir, gzip_out=False):
     """ 
@@ -179,12 +173,12 @@ def faa_merge(faa_files, outdir, gzip_out=False):
     
     logging.info('Formating & merging faa files...')
     seq_cnt = 0
-    with _open(outfile, 'w') as outF:
+    with open(outfile, 'w') as outF:
         for acc,faa_file in faa_files.items():            
-            with _open(faa_file, 'r') as inF:
+            with gtdb2td.Utils.Open(faa_file, 'r') as inF:
                 for line in inF:
                     try:
-                        line = line.decode('utf8')
+                        line = gtdb2td.Utils.Decode(line)
                     except AttributeError:
                         pass
                     if line.startswith('>'):

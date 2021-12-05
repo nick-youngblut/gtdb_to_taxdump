@@ -26,15 +26,9 @@ jobs:
       run: |
         pwd
         conda info -a
-        conda install python=${{ matrix.python-version }} bioconda::taxonkit conda-forge::networkx
+        conda install python=${{ matrix.python-version }} bioconda::taxonkit conda-forge::networkx pytest pytest-console-scripts
     - uses: actions/checkout@v2	
-    - name: Test scripts
+    - name: Script-level tests
       shell: bash -l {0}
       run: |
-        python gtdb_to_taxdump.py tests/data/gtdb_r89.0/ar122_taxonomy_r89.tsv tests/data/gtdb_r89.0/bac120_taxonomy_r89_n10k.tsv | tail -n 100
-        python gtdb_to_taxdump.py https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/ar122_taxonomy_r89.tsv | tail -n 100
-        taxonkit list --data-dir . --ids 1,10,24 | tail -n 100
-        taxonkit lineage --data-dir . tests/data/taxonkit/taxIDs.txt | tail -n 100
-        python ncbi-gtdb_map.py tests/data/ncbi-gtdb/ncbi_tax_queries.txt https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/ar122_metadata_r95.tar.gz https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/bac120_metadata_r95.tar.gz
-        python ncbi-gtdb_map.py -q gtdb_taxonomy tests/data/ncbi-gtdb/gtdb_tax_queries.txt https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/ar122_metadata_r95.tar.gz https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/bac120_metadata_r95.tar.gz
-        python lineage2taxid.py -h
+        pytest -s --script-launch-mode=subprocess
