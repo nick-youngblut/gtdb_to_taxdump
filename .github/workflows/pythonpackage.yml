@@ -26,8 +26,12 @@ jobs:
       run: |
         pwd
         conda info -a
-        conda install python=${{ matrix.python-version }} bioconda::taxonkit conda-forge::networkx pytest pytest-console-scripts
-    - uses: actions/checkout@v2	
+        conda install python=${{ matrix.python-version }} pip bioconda::taxonkit conda-forge::networkx pytest pytest-console-scripts
+    - uses: actions/checkout@v2
+    - name: package install
+      shell: bash -l {0}
+      run: |
+        pip install .
     - name: Script-level tests
       shell: bash -l {0}
       run: |
