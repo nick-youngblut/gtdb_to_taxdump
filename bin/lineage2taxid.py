@@ -67,53 +67,6 @@ parser.add_argument('--taxid-rank-column', type=str, default='taxid_rank',
 parser.add_argument('--version', action='version', version='0.0.1')
 
 # functions
-def load_dmp(names_dmp_file, nodes_dmp_file):
-    """
-    Loading NCBI names/nodes dmp files as DAG
-    Arguments:
-      names_dmp_file : str, names.dmp file
-      nodes_dmp_file : str, nodes.dmp file 
-    Return:
-      network.DiGraph object
-    """
-    regex = re.compile(r'\t\|\t')
-    # nodes
-    logging.info('Loading file: {}'.format(names_dmp_file))
-    idx = {}    # {taxid : name}
-    with gtdb2td.Utils.Open(names_dmp_file) as inF:
-        for line in inF:
-            line = line.rstrip()
-            if line == '':
-                continue
-            line = regex.split(line)
-            idx[int(line[0])] = line[1].lower()
-    # names
-    logging.info('Loading file: {}'.format(nodes_dmp_file))
-    G = nx.DiGraph()
-    G.add_node(0, rank = 'root', name = 'root')
-    with gtdb2td.Utils.Open(nodes_dmp_file) as inF:
-        for line in inF:
-            line = line.rstrip()
-            if line == '':
-                continue
-            line = regex.split(line)
-            taxid_child = int(line[0])
-            taxid_parent = int(line[1])
-            rank_child = line[2]
-            name_child = idx[taxid_child].lower()
-            name_parent = idx[taxid_parent].lower()
-            # adding node
-            G.add_node(taxid_child, rank=rank_child, name=name_child)
-            # adding edge
-            if taxid_parent == 1:
-                G.add_edge(0, taxid_child)
-            else:
-                G.add_edge(taxid_parent, taxid_child)
-    idx.clear()
-    logging.info('  No. of nodes: {}'.format(G.number_of_nodes()))
-    logging.info('  No. of edges: {}'.format(G.number_of_edges()))
-    return G
-
 def lineage2taxid(lineage, G):    
     lineage = lineage.split(';')    
     for cls in lineage[::-1]:
@@ -152,18 +105,20 @@ def parse_lineage_table(table_file, lineage_column, G,
             # status
             if i > 0 and (i+1) % 100 == 0:
                 logging.info('  Records processed: {}'.format(i+1))
-            
+
+## main interface
 def main(args):
     """
     Main interface
     """
     # loading dmp as DAG
-    G = load_dmp(args.names_dmp, args.nodes_dmp)
+    G = gtdb2td.Dmp.load_dmp(args.names_dmp, args.nodes_dmp)
     # lineage2taxid
     parse_lineage_table(args.table_file, args.lineage_column, G=G,
                         taxid_column = args.taxid_column,
                         taxid_rank_column = args.taxid_rank_column)
-        
+
+# script main
 if __name__ == '__main__':
     args = parser.parse_args()
     main(args)

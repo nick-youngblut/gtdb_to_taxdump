@@ -133,54 +133,56 @@ parser.add_argument('--version', action='version', version='0.0.1')
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
 
-def load_dmp(names_dmp_file, nodes_dmp_file, no_prefix=False):
-    """
-    Loading NCBI names/nodes dmp files as DAG
-    Arguments:
-      names_dmp_file : str, names.dmp file
-      nodes_dmp_file : str, nodes.dmp file 
-    Return:
-      network.DiGraph object
-    """
-    regex = re.compile(r'\t\|\t')
-    # nodes
-    logging.info('Loading file: {}'.format(names_dmp_file))
-    idx = {}    # {taxid : name}
-    with open(names_dmp_file) as inF:
-        for line in inF:
-            line = line.rstrip()
-            if line == '':
-                continue
-            line = regex.split(line)
-            idx[int(line[0])] = line[1]
-    # names
-    logging.info('Loading file: {}'.format(nodes_dmp_file))
-    G = nx.DiGraph()
-    G.add_node(0, rank = 'root', name = 'root')
-    with open(nodes_dmp_file) as inF:
-        for line in inF:
-            line = line.rstrip()
-            if line == '':
-                continue
-            line = regex.split(line)
-            taxid_child = int(line[0])
-            taxid_parent = int(line[1])
-            rank_child = line[2]
-            name_child = idx[taxid_child]
-            name_parent = idx[taxid_parent]
-            if rank_child == 'species':
-                name_child = 's__' + name_child
-            # adding node
-            G.add_node(taxid_child, rank=rank_child, name=name_child)
-            # adding edge
-            if taxid_parent == 1:
-                G.add_edge(0, taxid_child)
-            else:
-                G.add_edge(taxid_parent, taxid_child)
-    idx.clear()
-    logging.info('  No. of nodes: {}'.format(G.number_of_nodes()))
-    logging.info('  No. of edges: {}'.format(G.number_of_edges()))
-    return G
+# functions
+
+# def load_dmp(names_dmp_file, nodes_dmp_file, no_prefix=False):
+#     """
+#     Loading NCBI names/nodes dmp files as DAG
+#     Arguments:
+#       names_dmp_file : str, names.dmp file
+#       nodes_dmp_file : str, nodes.dmp file 
+#     Return:
+#       network.DiGraph object
+#     """
+#     regex = re.compile(r'\t\|\t')
+#     # nodes
+#     logging.info('Loading file: {}'.format(names_dmp_file))
+#     idx = {}    # {taxid : name}
+#     with open(names_dmp_file) as inF:
+#         for line in inF:
+#             line = line.rstrip()
+#             if line == '':
+#                 continue
+#             line = regex.split(line)
+#             idx[int(line[0])] = line[1]
+#     # names
+#     logging.info('Loading file: {}'.format(nodes_dmp_file))
+#     G = nx.DiGraph()
+#     G.add_node(0, rank = 'root', name = 'root')
+#     with open(nodes_dmp_file) as inF:
+#         for line in inF:
+#             line = line.rstrip()
+#             if line == '':
+#                 continue
+#             line = regex.split(line)
+#             taxid_child = int(line[0])
+#             taxid_parent = int(line[1])
+#             rank_child = line[2]
+#             name_child = idx[taxid_child]
+#             name_parent = idx[taxid_parent]
+#             if rank_child == 'species':
+#                 name_child = 's__' + name_child
+#             # adding node
+#             G.add_node(taxid_child, rank=rank_child, name=name_child)
+#             # adding edge
+#             if taxid_parent == 1:
+#                 G.add_edge(0, taxid_child)
+#             else:
+#                 G.add_edge(taxid_parent, taxid_child)
+#     idx.clear()
+#     logging.info('  No. of nodes: {}'.format(G.number_of_nodes()))
+#     logging.info('  No. of edges: {}'.format(G.number_of_edges()))
+#     return G
 
 def format_taxonomy(T, hierarchy, acc, no_prefix=False):
     """
@@ -594,7 +596,7 @@ def main(args):
     """
     # loading ncbi dmp files if provided
     if args.names_dmp is not None and args.nodes_dmp is not None:
-        ncbi_tax = load_dmp(args.names_dmp, args.nodes_dmp)
+        ncbi_tax = gtdb2td.Dmp.load_dmp(args.names_dmp, args.nodes_dmp)
     else:
         ncbi_tax = None    
     # loading the metadata as graphs

@@ -42,6 +42,14 @@ will create different taxIDs.
 
 # Install
 
+## Dependencies
+
+* numpy
+* networkx
+* taxonkit
+
+## Package
+
 ### From pypi
 
 ```

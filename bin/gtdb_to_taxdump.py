@@ -56,44 +56,14 @@ parser.add_argument('--version', action='version', version='0.0.1')
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
-
         
-def find_all_paths(self, start_vertex, end_vertex, path=[]):
-    """ find all paths from start_vertex to 
-        end_vertex in graph """
-    graph = self.__graph_dict 
-    path = path + [start_vertex]
-    if start_vertex == end_vertex:
-        return [path]
-    if start_vertex not in graph:
-        return []
-    paths = []
-    for vertex in graph[start_vertex]:
-        if vertex not in path:
-            extended_paths = self.find_all_paths(vertex, 
-                                                 end_vertex, 
-                                                 path)
-            for p in extended_paths: 
-                paths.append(p)
-    return paths
-
-def get_url_data(url):
-    """
-    Downloading data from url; assuming gzip
-    """
-    req = urllib.request.Request(url)
-    req.add_header('Accept-Encoding', 'gzip')
-    response = urllib.request.urlopen(req)
-    content = gzip.decompress(response.read())
-    return content.splitlines()
-
 def load_gtdb_tax(infile, graph):
     """
     loading gtdb taxonomy & adding to DAG
     """
     # url or file download/open
     try:        
-        inF = get_url_data(infile)
+        inF = gtdb2td.Utils.get_url_data(infile)
     except (OSError,ValueError) as e:
         try:
             ftpstream = urllib.request.urlopen(infile)

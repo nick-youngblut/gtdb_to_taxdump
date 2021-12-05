@@ -30,3 +30,13 @@ def Open(infile, mode='rb'):
         return gzip.open(infile, mode)
     else:
         return open(infile, mode)
+    
+def get_url_data(url):
+    """
+    Downloading data from url; assuming gzip
+    """
+    req = urllib.request.Request(url)
+    req.add_header('Accept-Encoding', 'gzip')
+    response = urllib.request.urlopen(req)
+    content = gzip.decompress(response.read())
+    return content.splitlines()
