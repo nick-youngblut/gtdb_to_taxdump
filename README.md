@@ -1,4 +1,4 @@
-![gtdb_to_taxdump](https://github.com/nick-youngblut/gtdb_to_taxdump/workflows/gtdb_to_taxdump/badge.svg)
+[![gtdb_to_taxdump](https://github.com/nick-youngblut/gtdb_to_taxdump/actions/workflows/pythonpackage.yml/badge.svg)](https://github.com/nick-youngblut/gtdb_to_taxdump/actions/workflows/pythonpackage.yml)
 
 gtdb_to_taxdump
 ===============
