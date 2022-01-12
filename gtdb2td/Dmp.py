@@ -12,6 +12,8 @@ import urllib.request
 import codecs
 import tarfile
 from collections import OrderedDict
+import gtdb2td
+
 ## 3rd party
 import networkx as nx
 from networkx.algorithms.dag import descendants
@@ -43,7 +45,7 @@ def read_names_dmp(infile, outdir):
     logging.info('Reading dumpfile: {}'.format(infile))
     with open(infile) as inF, open(outfile, 'w') as outF:
         for line in inF:
-            line = regex.split(line.rstrip())
+            line = regex.split(line.decode('utf-8').rstrip())
             if len(line) >= 2:
                 line[1] = regexp.sub('', line[1])  # accession
                 names_dmp[line[1]] = line[0]
@@ -72,7 +74,7 @@ def load_dmp(names_dmp_file, nodes_dmp_file):
             line = line.rstrip()
             if line == '':
                 continue
-            line = regex.split(line)
+            line = regex.split(line.decode('utf-8'))
             idx[int(line[0])] = line[1].lower()
     # names
     logging.info('Loading file: {}'.format(nodes_dmp_file))
@@ -83,7 +85,7 @@ def load_dmp(names_dmp_file, nodes_dmp_file):
             line = line.rstrip()
             if line == '':
                 continue
-            line = regex.split(line)
+            line = regex.split(line.decode('utf-8'))
             taxid_child = int(line[0])
             taxid_parent = int(line[1])
             rank_child = line[2]
