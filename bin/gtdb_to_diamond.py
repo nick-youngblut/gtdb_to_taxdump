@@ -15,6 +15,7 @@ import codecs
 import tarfile
 from collections import OrderedDict
 ## package
+from bin import __version__
 import gtdb_to_taxdump as gtdb2td
 
 # argparse
@@ -54,7 +55,7 @@ parser.add_argument('-g', '--gzip', action='store_true', default=False,
                     help='gzip output fasta? (Default: %(default)s)')
 parser.add_argument('-k', '--keep-temp', action='store_true', default=False,
                     help='Keep temporary output? (Default: %(default)s)')
-parser.add_argument('--version', action='version', version='0.0.1')
+parser.add_argument('--version', action='version', version=__version__)
 
 # logging
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)

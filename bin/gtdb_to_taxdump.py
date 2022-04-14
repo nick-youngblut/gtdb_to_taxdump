@@ -13,6 +13,7 @@ import urllib.request
 import codecs
 from collections import OrderedDict
 ## package
+from bin import __version__
 import gtdb2td
 
 # argparse
@@ -52,7 +53,7 @@ parser.add_argument('-t', '--table', type=str, default=None,
                     help='Table to append taxIDs to. Accessions used for table join (Default: %(default)s)')
 parser.add_argument('-c', '--column', type=str, default='accession',
                     help='Column in --table that contains genome accessions (Default: %(default)s)')
-parser.add_argument('--version', action='version', version='0.0.1')
+parser.add_argument('--version', action='version', version=__version__)
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
