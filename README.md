@@ -123,6 +123,10 @@ gtdb_to_taxdump.py \
   * Use to get the taxids for a set of lineages (eg., from GTDB-Tk) 
   * This is somewhat of a reverse of `gtdb_to_taxdump.py`
   * The script can work with GTDB or NCBI tax dumps
+* `acc2gtdb_tax.py`
+  * Use to create an accession2taxid file
+  * Create sequence accession to TAXID mapping file
+  * This will go through every GTDB genome, to get sequence accession, which will take a while.
 * `./uniref_utils/`
   * `unirefxml2clust50-90idx.py`
     * Mapping UniRef90 cluster IDs to UniRef50 cluster IDs
