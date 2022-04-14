@@ -24,6 +24,7 @@ from networkx.algorithms.dag import descendants
 from networkx.algorithms.dag import ancestors
 from networkx.algorithms.lowest_common_ancestors import lowest_common_ancestor
 from networkx.algorithms.shortest_paths.unweighted import bidirectional_shortest_path
+from bin import __version__
 ## package
 import gtdb2td
 
@@ -129,7 +130,7 @@ parser.add_argument('-p', '--procs', type=int, default=1,
                     help='No. of parallel processes (Default: %(default)s)')
 parser.add_argument('-v', '--verbose', action='store_true', default=False,
                     help='Verbose output (Default: %(default)s)')
-parser.add_argument('--version', action='version', version='0.0.1')
+parser.add_argument('--version', action='version', version=__version__)
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
 

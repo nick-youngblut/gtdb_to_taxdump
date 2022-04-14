@@ -3,6 +3,7 @@ from setuptools import setup, find_packages
 import os
 import glob
 import numpy
+from bin import __version__
 
     
 # dependencies

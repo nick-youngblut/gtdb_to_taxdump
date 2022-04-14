@@ -15,6 +15,7 @@ from networkx.algorithms.dag import descendants
 from networkx.algorithms.lowest_common_ancestors import lowest_common_ancestor
 from networkx.algorithms.shortest_paths.unweighted import bidirectional_shortest_path
 ## package
+from bin import __version__
 import gtdb_to_taxdump as gtdb2td
 
 # logging
@@ -64,7 +65,7 @@ parser.add_argument('--taxid-column', type=str, default='taxid',
                     help='Name of taxid column that will be appended to the input table')
 parser.add_argument('--taxid-rank-column', type=str, default='taxid_rank',
                     help='Name of taxid-rank column that will be appended to the input table')
-parser.add_argument('--version', action='version', version='0.0.1')
+parser.add_argument('--version', action='version', version=__version__)
 
 # functions
 def lineage2taxid(lineage, G):    
