@@ -28,15 +28,20 @@ with diamond (LCA-based method).
 
 Example of getting a GTDB faa fasta tarball:
   
-  wget https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/genomic_files_reps/gtdb_proteins_aa_reps_r95.tar.gz
+  wget https://data.ace.uq.edu.au/public/gtdb/data/releases/release202/202.0/genomic_files_reps/gtdb_proteins_aa_reps_r202.tar.gz
+
+  # also get Struo2 GTDB taxdump files
+  wget http://ftp.tue.mpg.de/ebio/projects/struo2/GTDB_release202/taxdump/taxdump.tar.gz
+  tar -pzxvf taxdump.tar.gz
 
 Example extraction & formatting of faa files from tarball:
 
-  gtdb_to_diamond.py gtdb_proteins_aa_reps_r95.tar.gz names.dmp nodes.dmp
+  OUTDIR=gtdb2dmnd_out
+  gtdb_to_diamond.py -o $OUTDIR gtdb_proteins_aa_reps_r202.tar.gz taxdump/names.dmp taxdump/nodes.dmp
 
 Example "diamond makedb" run with gtdb_to_diamond.py output files:
 
-  diamond makedb --in $OUTDIR/gtdb_all.faa --db gtdb.dmnd --taxonmap $OUTDIR/accession2taxid.tsv --taxonnodes $OUTDIR/nodes.dmp --taxonnames $OUTDIR/names.dmp
+  diamond makedb --in $OUTDIR/gtdb_all.faa --db $OUTDIR/GTDB202.dmnd --taxonmap $OUTDIR/accession2taxid.tsv --taxonnodes $OUTDIR/nodes.dmp --taxonnames $OUTDIR/names.dmp
 """
 parser = argparse.ArgumentParser(description=desc,
                                  epilog=epi,

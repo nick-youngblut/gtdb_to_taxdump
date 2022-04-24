@@ -34,6 +34,15 @@ def copy_nodes(infile, outdir):
             outF.write(line)
     logging.info('File written: {}'.format(outfile))
 
+def _decode(x):
+    """
+    decode string, if necessary
+    """
+    try:
+        return x.decode('utf-8')
+    except AttributeError:
+        return x
+    
 def read_names_dmp(infile, outdir):
     """ 
     Reading names.dmp file
@@ -45,7 +54,7 @@ def read_names_dmp(infile, outdir):
     logging.info('Reading dumpfile: {}'.format(infile))
     with open(infile) as inF, open(outfile, 'w') as outF:
         for line in inF:
-            line = regex.split(line.decode('utf-8').rstrip())
+            line = regex.split(_decode(line).rstrip())
             if len(line) >= 2:
                 line[1] = regexp.sub('', line[1])  # accession
                 names_dmp[line[1]] = line[0]
