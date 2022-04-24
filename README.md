@@ -7,6 +7,9 @@ gtdb_to_taxdump
 
 Convert GTDB taxonomy to NCBI taxdump format.
 
+> NOTE: the taxIDs are NOT stable between releases!
+> See [gtdb-taxdump](https://github.com/shenwei356/gtdb-taxdump) for an alternative that uses stable taxIDs.
+
 # Table of Contents
 
 - [gtdb_to_taxdump](#gtdb-to-taxdump)
