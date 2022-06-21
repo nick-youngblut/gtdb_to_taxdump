@@ -14,5 +14,5 @@ data_dir = os.path.join(test_dir, 'data')
 # tests
 def test_help(script_runner):
     ret = script_runner.run('lineage2taxid.py', '-h')
-    assert ret.success
+    assert ret.success, ret.print()
 

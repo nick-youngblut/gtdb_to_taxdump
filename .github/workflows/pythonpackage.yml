@@ -18,15 +18,15 @@ jobs:
       with:
         miniconda-version: 'latest'
         auto-update-conda: true
+	mamba-version: "*"
         python-version: ${{ matrix.python-version }}
         channels: conda-forge,bioconda
         activate-environment: gtdb_to_taxdump
     - name: conda env setup
       shell: bash -l {0}
       run: |
-        pwd
         conda info -a
-        conda install python=${{ matrix.python-version }} pip numpy bioconda::taxonkit conda-forge::networkx pytest pytest-console-scripts
+        mamba install python=${{ matrix.python-version }} pip numpy bioconda::taxonkit conda-forge::networkx pytest pytest-console-scripts
     - uses: actions/checkout@v2
     - name: package install
       shell: bash -l {0}
@@ -35,4 +35,4 @@ jobs:
     - name: Script-level tests
       shell: bash -l {0}
       run: |
-        pytest -s --script-launch-mode=subprocess
+        pytest -s --hide-run-results --script-launch-mode=subprocess

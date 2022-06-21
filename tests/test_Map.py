@@ -14,7 +14,7 @@ data_dir = os.path.join(test_dir, 'data')
 # tests
 def test_help(script_runner):
     ret = script_runner.run('ncbi-gtdb_map.py', '-h')
-    assert ret.success
+    assert ret.success, ret.print()
 
 def test_gtdb_map(script_runner, tmp_path):
     queries = os.path.join(data_dir, 'ncbi-gtdb', 'ncbi_tax_queries.txt')
@@ -23,7 +23,7 @@ def test_gtdb_map(script_runner, tmp_path):
     outdir = os.path.join(str(tmp_path), 'tax_map')
     ret = script_runner.run('ncbi-gtdb_map.py', '--outdir', outdir,
                             queries, arc, bac)
-    assert ret.success
+    assert ret.success, ret.print()
 
 def test_gtdb_map2gtdb(script_runner, tmp_path):
     queries = os.path.join(data_dir, 'ncbi-gtdb', 'gtdb_tax_queries.txt')
@@ -32,5 +32,5 @@ def test_gtdb_map2gtdb(script_runner, tmp_path):
     outdir = os.path.join(str(tmp_path), 'tax_map')
     ret = script_runner.run('ncbi-gtdb_map.py', '--outdir', outdir,
                             '-q', 'gtdb_taxonomy', queries, arc, bac)
-    assert ret.success
+    assert ret.success, ret.print()
     

@@ -29,10 +29,12 @@ Convert GTDB taxonomy to NCBI taxdump format in order to
 use the GTDB taxonomy with software that requires a
 taxonomy in the taxdump format (eg., kraken2 or TaxonKit).
 
-Note that the taxIDs are arbitrarily assigned and don't
+> Note that the taxIDs are arbitrarily assigned and don't
 match anything in the NCBI! Running `gtdb_to_taxdump` on
 a different list of taxonomies (e.g., a different GTDB release)
 will create different taxIDs.
+See [GTDB-taxdump](https://github.com/shenwei356/gtdb-taxdump) for a method 
+to produce stable taxIDs (recommended!). 
 
 ## WARNING
 
