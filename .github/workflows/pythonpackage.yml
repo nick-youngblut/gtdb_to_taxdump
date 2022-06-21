@@ -18,7 +18,7 @@ jobs:
       with:
         miniconda-version: 'latest'
         auto-update-conda: true
-	mamba-version: "*"
+        mamba-version: "*"
         python-version: ${{ matrix.python-version }}
         channels: conda-forge,bioconda
         activate-environment: gtdb_to_taxdump
