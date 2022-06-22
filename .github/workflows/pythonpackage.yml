@@ -26,7 +26,8 @@ jobs:
       shell: bash -l {0}
       run: |
         conda info -a
-        mamba install python=${{ matrix.python-version }} pip numpy bioconda::taxonkit conda-forge::networkx pytest pytest-console-scripts
+        mamba install python=${{ matrix.python-version }} pip numpy dataclasses bioconda::taxonkit=0.12.0 conda-forge::networkx=2.6.3 pytest pytest-console-scripts
+	conda list
     - uses: actions/checkout@v2
     - name: package install
       shell: bash -l {0}
