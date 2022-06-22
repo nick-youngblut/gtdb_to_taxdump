@@ -16,7 +16,7 @@ from networkx.algorithms.lowest_common_ancestors import lowest_common_ancestor
 from networkx.algorithms.shortest_paths.unweighted import bidirectional_shortest_path
 ## package
 from bin import __version__
-import gtdb_to_taxdump as gtdb2td
+import gtdb2td
 
 # logging
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)

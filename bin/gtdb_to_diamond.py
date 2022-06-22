@@ -16,7 +16,7 @@ import tarfile
 from collections import OrderedDict
 ## package
 from bin import __version__
-import gtdb_to_taxdump as gtdb2td
+import gtdb2td
 
 # argparse
 desc = 'Converting GTDB taxonomy to input for "diamond makedb --taxonmap"'
@@ -120,7 +120,7 @@ def main(args):
     Main interface
     """
     if not os.path.isdir(args.outdir):
-        os.makedirs(args.outdir)
+        os.makedirs(args.outdir)        
     # copying nodes
     gtdb2td.Dmp.copy_nodes(args.nodes_dmp, args.outdir)
     # reading in names.dmp
