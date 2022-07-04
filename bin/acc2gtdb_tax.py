@@ -91,7 +91,7 @@ def seq_acc2tax(genome_file, genome_acc2taxid, seq_acc2taxid):
     acc_code = {"GCF": "RS_", "GCA": "GB_"}
     print(genome_file)
     splitpath = genome_file.split("/")
-    acc_prefix = acc_code[splitpath[-4]]
+    acc_prefix = acc_code[splitpath[-5]]
     splitname = splitpath[-1].split("_")
     genome_acc = f"{acc_prefix}{splitname[0]}_{splitname[1]}"
     with gzip.open(genome_file, "rb") as f:
