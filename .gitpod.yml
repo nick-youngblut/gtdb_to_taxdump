@@ -4,6 +4,6 @@ tasks:
     init: |
       mamba init
       . ${HOME}/.bashrc
-      mamba env create -n dev_env -f environment.yml
+      mamba env create -f environment.yml python=3.9
       mamba activate dev_env
       pip install .
