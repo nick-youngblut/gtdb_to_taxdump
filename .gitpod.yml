@@ -1,5 +1,4 @@
-image:
-  file: Dockerfile
+image: condaforge/mambaforge
 tasks:
   - name: mamba env create and package install
     init: |
@@ -8,5 +7,3 @@ tasks:
       mamba env create -n dev_env -f environment.yml
       mamba activate dev_env
       pip install .
-    command: |
-      mamba activate dev_env
