@@ -1,6 +1,12 @@
 image:
   file: Dockerfile
 tasks:
+  - name: mamba env create
+    init: |
+      mamba init
+      . ${HOME}/.bashrc
+      mamba env create -n dev_env -f environment.yml
   - name: package install
     init: |
+      mamba activate dev_env
       pip install .
