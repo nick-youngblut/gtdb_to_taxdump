@@ -14,6 +14,7 @@ jobs:
       matrix:
         python-version: [3.7, 3.8, 3.9]
     steps:
+    - name: miniconda setup
     - uses: conda-incubator/setup-miniconda@v2
       with:
         miniconda-version: 'latest'
@@ -21,13 +22,14 @@ jobs:
         mamba-version: "*"
         python-version: ${{ matrix.python-version }}
         channels: conda-forge,bioconda
+        environment-file: environment.yml
         activate-environment: gtdb_to_taxdump
-    - name: conda env setup
-      shell: bash -l {0}
-      run: |
-        mamba info -a
-        mamba env update -f ${GITHUB_WORKSPACE}/environment.yml
-        mamba list
+    # - name: conda env setup
+    #   shell: bash -l {0}
+    #   run: |
+    #     mamba info -a
+    #     mamba env update -f ${GITHUB_WORKSPACE}/environment.yml
+    #     mamba list
     - uses: actions/checkout@v2
     - name: package install
       shell: bash -l {0}
