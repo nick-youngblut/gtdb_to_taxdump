@@ -1,5 +1,8 @@
 image: mambaorg/micromamba
 tasks:
-  - init: |
-    mamba install python=3.9 pip numpy dataclasses bioconda::taxonkit=0.12.0 conda-forge::networkx=2.6.3 pytest pytest-console-scripts
-    pip install .
+  - name: mamba install
+    init: |
+      mamba install python=3.9 pip numpy dataclasses bioconda::taxonkit=0.12.0 conda-forge::networkx=2.6.3 pytest pytest-console-scripts
+  - name: package install
+    init: |
+      pip install .
