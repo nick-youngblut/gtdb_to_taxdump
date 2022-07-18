@@ -1,5 +1,6 @@
-FROM continuumio/miniconda3
+FROM condaforge/mambaforge
+RUN apt-get update
+RUN apt-get install sudo
 COPY environment.yml .
-RUN conda install -c conda-forge mamba
-RUN /bin/bash -c "mamba env create -f environment.yml"
+RUN mamba env create -f environment.yml
 
