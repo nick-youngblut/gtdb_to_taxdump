@@ -3,4 +3,5 @@ image:
 tasks:
   - name: package install
     init: |
+      mamba activate dev_env
       pip install .
