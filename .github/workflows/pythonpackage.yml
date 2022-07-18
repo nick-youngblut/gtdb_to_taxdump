@@ -32,7 +32,7 @@ jobs:
       run: |
         pip install .
     - name: Check Installation
-     run: |
+      run: |
         mamba list
         pip list
     - name: Script-level tests
