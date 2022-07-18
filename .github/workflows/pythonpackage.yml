@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.7, 3.8, 3.9]
     steps:
     - uses: conda-incubator/setup-miniconda@v2
       with:
@@ -26,7 +26,7 @@ jobs:
       shell: bash -l {0}
       run: |
         mamba info -a
-        mamba env update -f environment.yml
+        mamba env update -f ${GITHUB_WORKSPACE}/environment.yml
         mamba list
     - uses: actions/checkout@v2
     - name: package install
