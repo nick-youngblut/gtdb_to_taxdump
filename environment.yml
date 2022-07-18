@@ -1,0 +1,13 @@
+name: gtdb_to_taxdump
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.9
+  - pip
+  - numpy
+  - dataclasses
+  - taxonkit=0.12.0
+  - networkx=2.6.3
+  - pytest
+  - pytest-console-scripts

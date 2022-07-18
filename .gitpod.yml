@@ -1,9 +1,6 @@
-image: gitpod/workspace-python
+image:
+  file: Dockerfile
 tasks:
-  - name: mamba install
-    init: |
-      wget -qO- https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
-      micromamba install -c conda-forge -c bioconda python=3.9 pip numpy dataclasses bioconda::taxonkit=0.12.0 conda-forge::networkx=2.6.3 pytest pytest-console-scripts
   - name: package install
     init: |
       pip install .
