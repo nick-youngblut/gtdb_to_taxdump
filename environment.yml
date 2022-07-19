@@ -1,4 +1,4 @@
-name: dev_env
+name: gtdb_to_taxdump
 channels:
   - conda-forge
   - bioconda

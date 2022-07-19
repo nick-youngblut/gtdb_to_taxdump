@@ -12,5 +12,5 @@ tasks:
       mamba init
       . ${HOME}/.bashrc
       mamba env create -f environment.yml python=3.9
-      mamba activate dev_env
+      mamba activate gtdb_to_taxdump
       pip install .
