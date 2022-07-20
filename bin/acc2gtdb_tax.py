@@ -7,7 +7,9 @@ import logging
 import os
 from tqdm.contrib.concurrent import thread_map
 from tqdm import tqdm
+import re
 from functools import partial
+from pathlib import Path
 
 
 # argparse
@@ -89,10 +91,15 @@ def seq_acc2tax(genome_file, genome_acc2taxid, seq_acc2taxid):
         seq_acc2tax(dict): sequence_accession2taxid dict
     """
     acc_code = {"GCF": "RS_", "GCA": "GB_"}
-    print(genome_file)
-    splitpath = genome_file.split("/")
-    acc_prefix = acc_code[splitpath[-4]]
-    splitname = splitpath[-1].split("_")
+    db_regex = re.compile(".*\/(GC[AF])\/.*")
+
+    # logging.info()
+    try:
+        acc_prefix = acc_code[re.match(db_regex, genome_file).group(1)]
+    except AttributeError as e:
+        logging.error(f"Could not parse accession prefix from {genome_file}")
+        raise e
+    splitname = Path(genome_file).stem.split("_")
     genome_acc = f"{acc_prefix}{splitname[0]}_{splitname[1]}"
     with gzip.open(genome_file, "rb") as f:
         for line in f:
