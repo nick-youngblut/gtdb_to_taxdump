@@ -58,6 +58,7 @@ Notes:
 * The input table of queries should be tab-delimited (select the column with --column).
 * Query-target matching is caps-invariant (all converted to lower case for matching)!
 * The table can have a header (see --header) and can be compressed via gzip or bzip2.
+* See https://github.com/nick-youngblut/gtdb_to_taxdump/tree/master/tests/data/ncbi-gtdb for example queries.
 
 Output:
 * Output written to --outdir
