@@ -2,11 +2,6 @@
 # import
 ## batteries
 from __future__ import print_function
-import os
-import sys
-import re
-import gzip
-import bz2
 import argparse
 import logging
 ## 3rd party

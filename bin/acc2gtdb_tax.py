@@ -1,15 +1,14 @@
 #!/usr/bin/env python
-
 from bin import __version__
+import os
+import re
 import argparse
 import gzip
 import logging
-import os
-from tqdm.contrib.concurrent import thread_map
-from tqdm import tqdm
-import re
 from functools import partial
 from pathlib import Path
+from tqdm import tqdm
+from tqdm.contrib.concurrent import thread_map
 
 
 # argparse
@@ -51,7 +50,7 @@ parser.add_argument("--version", action="version", version=__version__)
 logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.DEBUG)
 
 
-def get_all_genomes(genome_dir):
+def get_all_genomes(genome_dir: str) -> list:
     """Get path to all genomes in GTDB directory
     Args:
         genome_dir (str): Path to GTDB genome directory
@@ -66,7 +65,7 @@ def get_all_genomes(genome_dir):
     return genome_paths
 
 
-def genome_acc2tax(names):
+def genome_acc2tax(names: str) -> dict:
     """Get genome accession to taxid mapping
     Args:
         names (str): Path to GTDB names.dmp file
@@ -82,7 +81,7 @@ def genome_acc2tax(names):
     return genome_acc2taxid
 
 
-def seq_acc2tax(genome_file, genome_acc2taxid, seq_acc2taxid):
+def seq_acc2tax(genome_file: str, genome_acc2taxid: dict, seq_acc2taxid: dict) -> None:
     """
     Creates the sequence accession2taxid mappings
     Args:
@@ -115,14 +114,14 @@ def seq_acc2tax(genome_file, genome_acc2taxid, seq_acc2taxid):
                 continue
 
 
-def write_acc2tax(seq_acc2taxid, outfile):
+def write_acc2tax(seq_acc2taxid: dict, outfile: str) -> None:
     with gzip.open(outfile, "wb") as f:
         f.write("accession\taccession.version\ttaxid\n".encode())
         for acc in tqdm(seq_acc2taxid):
             f.write(f"{acc.split('.')[0]}\t{acc}\t{seq_acc2taxid[acc]}\n".encode())
 
 
-def main(args):
+def main(args: dict) -> None:
     logging.debug("Reading GTDB names.dmp file")
     genome_acc2taxid = genome_acc2tax(args.names_dmp)
 

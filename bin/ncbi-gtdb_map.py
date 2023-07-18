@@ -3,18 +3,13 @@ from __future__ import print_function
 # import
 ## batteries
 import os
-import sys
 import re
-import gzip
-import bz2
 import shutil
 import tarfile
 import argparse
 import logging
 import random
-import csv
 import urllib.request
-import codecs
 import functools
 import multiprocessing as mp
 from collections import Counter
@@ -589,8 +584,8 @@ def rename(tax_idx: list, tax_queries: str, outdir: str,
             outF.write('\t'.join(line) + '\n')
     # status
     logging.info(f'File written: {outfile}')
-    logging.info(f'  No. of queries renamed: {status["renamed"]}'
-    logging.info(f'  No. of queries excluded: {status["excluded"]}'
+    logging.info(f'  No. of queries renamed: {status["renamed"]}')
+    logging.info(f'  No. of queries excluded: {status["excluded"]}')
             
 def main(args: dict) -> None:
     """
