@@ -3,23 +3,15 @@
 from __future__ import print_function
 ## batteries
 import os
-import re
-import sys
-import gzip
-import glob
 import shutil
 import argparse
 import logging
-import urllib.request
-import codecs
-import tarfile
-from collections import OrderedDict
 ## package
 from bin import __version__
 import gtdb2td
 
 # argparse
-desc = 'Converting GTDB taxonomy to input for "diamond makedb --taxonmap"'
+desc = 'Convert GTDB taxonomy to input for "diamond makedb --taxonmap"'
 epi = """DESCRIPTION:
 Convert Genome Taxonomy Database (GTDB) representative genome
 gene amino acid sequences to the input files required for 

@@ -239,8 +239,7 @@ def load_gtdb_metadata(infile: str, G, completeness: float,
             continue
         line = line.split('\t')
         if len(line) < 2:
-            msg = 'Line{} does not contain >=2 columns'
-            raise ValueError(msg.format(i+1))
+            raise ValueError(f'Line{i+1} does not contain >=2 columns')
         # header
         if i == 0:
             header = {x:ii for ii,x in enumerate(line)}
@@ -249,7 +248,7 @@ def load_gtdb_metadata(infile: str, G, completeness: float,
         try:
             X = line[header['ncbi_taxonomy']]
         except KeyError:
-            raise KeyError('Cannot find "ncbi_taxonomy"')
+            raise KeyError(f'Cannot find the "ncbi_taxonomy" column in {infile}')
         if X == 'none':
             stats['no ncbi tax'] += 1
             continue
@@ -257,14 +256,14 @@ def load_gtdb_metadata(infile: str, G, completeness: float,
         try:
             X = line[header['checkm_completeness']]
         except KeyError:
-            raise KeyError('Cannot find "checkm_completeness"')
+            raise KeyError(f'Cannot find the "checkm_completeness" column in {infile}')
         if float(X) < completeness:
             stats['completeness'] += 1
             continue
         try:
             X = line[header['checkm_contamination']]
         except KeyError:
-            raise KeyError('Cannot find "checkm_contamination"')
+            raise KeyError(f'Cannot find the "checkm_contamination" column in {infile}')
         if float(X) >= contamination:
             stats['contamination'] += 1
             continue
@@ -501,7 +500,7 @@ def query_tax(tax_queries: str, G, tax: str, lca_frac: float=1.0,
     for i,q in enumerate(queries):
         q_batch[i % procs].append(q)
     queries = None
-    logging.info(f'  No. of batches: {len(q_batch))}')
+    logging.info(f'  No. of batches: {len(q_batch)}')
     logging.info(f'  Queries per batch: {len(q_batch[0])}')
     # query graphs
     logging.info('Querying taxonomies...')
