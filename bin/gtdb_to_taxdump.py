@@ -17,7 +17,7 @@ from bin import __version__
 import gtdb2td
 
 # argparse
-desc = 'Converting GTDB taxonomy to NCBI taxdump format'
+desc = 'Convert GTDB taxonomy to NCBI taxdump format'
 epi = """DESCRIPTION:
 Convert Genome Taxonomy Database (GTDB) taxonomy files
 to NCBI taxdump format (names.dmp & nodes.dmp).
@@ -28,7 +28,7 @@ or gzip'ed.
 
 The input table format should be >=2 columns,
 (Column1 = accession, Column2 = gtdb_taxonomy),
-and no header
+and no header.
 
 The *.dmp files are written to `--outdir`.
 A tab-delim table of taxID info is written to STDOUT.
@@ -58,9 +58,14 @@ parser.add_argument('--version', action='version', version=__version__)
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
         
-def load_gtdb_tax(infile, graph):
+def load_gtdb_tax(infile: str, graph) -> None:
     """
-    loading gtdb taxonomy & adding to DAG
+    Load gtdb taxonomy & adding to DAG
+    Params:
+      infile: input file url or path
+      graph: graph object
+    Returns:
+      None
     """
     # url or file download/open
     try:        
@@ -102,14 +107,22 @@ def load_gtdb_tax(infile, graph):
     except AttributeError:
         pass
 
-def write_blank_dmp(outfile, outdir=None):
+def write_blank_dmp(outfile: str, outdir: str=None) -> None:
+    """
+    Write a blank taxdump file.
+    Params:
+      outfile: filename
+      outdir: output directory (Default: current dir)
+    Returns:
+      None
+    """
     if outdir is not None:
         outfile = os.path.join(outdir, outfile)
     with open(outfile, 'w') as outF:
         outF.write('#\n')
-    logging.info('File written: {}'.format(outfile))
+    logging.info(f'File written: {outfile}')
     
-def main(args):
+def main(args: dict) -> None:
     # creating DAG
     graph = gtdb2td.Graph()
     graph.add_vertex('root')

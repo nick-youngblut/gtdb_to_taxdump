@@ -29,7 +29,7 @@ from bin import __version__
 import gtdb2td
 
 # argparse
-desc = 'Mapping between NCBI & GTDB taxonomies'
+desc = 'Map between NCBI & GTDB taxonomies'
 epi = """DESCRIPTION:
 Using the GTDB metadata table (which contains both NCBI and GTDB taxonomies)
 to map taxonomic classifications between the 2 taxonomies.
@@ -137,64 +137,16 @@ logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
 # functions
 
-# def load_dmp(names_dmp_file, nodes_dmp_file, no_prefix=False):
-#     """
-#     Loading NCBI names/nodes dmp files as DAG
-#     Arguments:
-#       names_dmp_file : str, names.dmp file
-#       nodes_dmp_file : str, nodes.dmp file 
-#     Return:
-#       network.DiGraph object
-#     """
-#     regex = re.compile(r'\t\|\t')
-#     # nodes
-#     logging.info('Loading file: {}'.format(names_dmp_file))
-#     idx = {}    # {taxid : name}
-#     with open(names_dmp_file) as inF:
-#         for line in inF:
-#             line = line.rstrip()
-#             if line == '':
-#                 continue
-#             line = regex.split(line)
-#             idx[int(line[0])] = line[1]
-#     # names
-#     logging.info('Loading file: {}'.format(nodes_dmp_file))
-#     G = nx.DiGraph()
-#     G.add_node(0, rank = 'root', name = 'root')
-#     with open(nodes_dmp_file) as inF:
-#         for line in inF:
-#             line = line.rstrip()
-#             if line == '':
-#                 continue
-#             line = regex.split(line)
-#             taxid_child = int(line[0])
-#             taxid_parent = int(line[1])
-#             rank_child = line[2]
-#             name_child = idx[taxid_child]
-#             name_parent = idx[taxid_parent]
-#             if rank_child == 'species':
-#                 name_child = 's__' + name_child
-#             # adding node
-#             G.add_node(taxid_child, rank=rank_child, name=name_child)
-#             # adding edge
-#             if taxid_parent == 1:
-#                 G.add_edge(0, taxid_child)
-#             else:
-#                 G.add_edge(taxid_parent, taxid_child)
-#     idx.clear()
-#     logging.info('  No. of nodes: {}'.format(G.number_of_nodes()))
-#     logging.info('  No. of edges: {}'.format(G.number_of_edges()))
-#     return G
-
-def format_taxonomy(T, hierarchy, acc, no_prefix=False):
+def format_taxonomy(T, hierarchy: list, acc: str, no_prefix=False) -> list:
     """
     Formatting taxonomy to conform to a set hierarchy
-    Arguments:
-      T : iterable, taxonomy
-      hierarchy : taxonomic hierarchy 
-      acc : accession
+    Params:
+      T: iterable, taxonomy
+      hierarchy: taxonomic hierarchy 
+      acc: accession
+      no_prefix: strip taxonomic prefixes?
     Return:
-      [taxonomy_level1, taxonomy_level2, ...]
+      List of taxonomic names in the hierarchy; [taxonomy_level1, taxonomy_level2, ...]
     """
     regex = re.compile(r'^[dpcofgs]__$')
     regex2 = re.compile(r'^X*[dpcofgs]__')    
@@ -210,41 +162,42 @@ def format_taxonomy(T, hierarchy, acc, no_prefix=False):
     Tx[-1] = acc
     return Tx
 
-def add_taxonomy(line, line_num, header, G, tax='ncbi_taxonomy', no_prefix=False):
+def add_taxonomy(line: list, line_num: int, header: dict, G, 
+                 tax='ncbi_taxonomy', no_prefix=False) -> None:
     """
-    Adding taxonomy nodes/edits to the graph
-    Arguments:
-      line : iterable, line of metadata file
-      line_num : int, line number of metadata file
+    Add taxonomy nodes/edits to the graph.
+    Params:
+      line: iterable, line of metadata file
+      line_num: int, line number of metadata file
       header : dict, index of header for metadata file
       G : taxonomy graph
       tax : ncbi or gtdb?
     Return:
-      In-place edit of G
+      None; in-place edit of G
     """
     hierarchy = ['domain', 'phylum', 'class', 'order',
                  'family', 'genus', 'species', 'strain']
-    # checking taxonomy format
+    # check taxonomy format
     acc = line[header['accession']]
     T = line[header[tax]].split(';')
     T = format_taxonomy(T, hierarchy, acc, no_prefix=no_prefix)
-    # adding taxonomy to graph
+    # add taxonomy to graph
     for i in range(len(hierarchy)):        
-        # adding node
+        # add node
         G[tax].add_node(T[i].lower(), taxonomy=hierarchy[i], orig_name=T[i])
-        # adding edge
+        # add edge
         if i == 0:
             G[tax].add_edge('root', T[i].lower())
         else:
             G[tax].add_edge(T[i-1].lower(), T[i].lower())
 
-def dl_uncomp(url):
+def dl_uncomp(url: str) -> tuple:
     """
-    Downloading and extracting GTDB metadata tarball
-    Arguments:
-      url : str, url of GTDB metadata tarball
+    Download and extracting GTDB metadata tarball.
+    Params:
+      url: str, url of GTDB metadata tarball
     Return: 
-      (metadata_filehandle, output_directory)
+      Tuple of (metadata_filehandle, output_directory)
     """
     file_tmp = urllib.request.urlretrieve(url, filename=None)[0]
     tmpdir = os.path.dirname(file_tmp)
@@ -256,11 +209,20 @@ def dl_uncomp(url):
     inF = open(os.path.join(outdir, tar.getnames()[0]))
     return inF,outdir
             
-def load_gtdb_metadata(infile, G, completeness, contamination, no_prefix=False):
+def load_gtdb_metadata(infile: str, G, completeness: float, 
+                       contamination: float, no_prefix: bool=False):
     """
-    Loading gtdb taxonomy & adding to DAG 
+    Load gtdb taxonomy & adding to DAG.
+    Params:
+      infile: input file url or path
+      G: graph object
+      completeness: min completeness
+      contamination: max contamination
+      no_prefix: strip taxonomic prefixes?
+    Return:
+      Graph object (DAG)
     """
-    logging.info('Loading: {}'.format(infile))
+    logging.info(f'Loading: {infile}')
     # input as file or url
     try:
         inF,tmpdir = dl_uncomp(infile)
@@ -331,7 +293,7 @@ def load_gtdb_metadata(infile, G, completeness, contamination, no_prefix=False):
     logging.info(msg.format(stats['completeness']))
     msg = '  Contamination-filtered entries: {}'
     logging.info(msg.format(stats['contamination']))
-    logging.info('  Entries used: {}'.format(stats['passed']))    
+    logging.info(f'  Entries used: {stats["passed"]}')
     return G
 
 def DiGraph_w_root():
@@ -342,15 +304,17 @@ def DiGraph_w_root():
     G.add_node('root')
     return G
 
-def lca_frac_pass(D, lca_frac):
+def lca_frac_pass(D: dict, lca_frac: float) -> None:
     """
     Determine which, if any, of the LCAs pass the homogeneity cutoff.
     "homogeneity" means the fraction of tips with the target LCA 
       (eg., 90% of all tips have this LCA).
     If the cutoff is not passed, then returning [None,None]
-    Arguments:
-      D : dict, LCA dict
-      lca_frac : float, fraction of decendents that must have the same taxonomy
+    Params:
+      D: LCA dict
+      lca_frac: fraction of decendents that must have the same taxonomy
+    Return:
+      None
     """
     D = Counter(D)
     try:
@@ -368,14 +332,20 @@ def lca_frac_pass(D, lca_frac):
     else:
         return [None,None]
 
-def lca_many_nodes(G, nodes, lca_frac=1.0):
+def lca_many_nodes(G, nodes: list, lca_frac: float=1.0) -> list:
     """
-    algorithm: using closest distance to 'root'
+    Algorithm: using closest distance to 'root'
+    Params:
+      G: graph object
+      nodes: list of nodes
+      lca_frac: fraction of decendents that must have the same taxonomy
+    Return:
+      List of LCAs that pass the homogeneity cutoff
     """
     hierarchy = ['root', 'domain', 'phylum', 'class', 'order',
                  'family', 'genus', 'species', 'strain']    
     T = [{} for x in hierarchy]
-    # getting path from nodes to root
+    # Get path from nodes to root
     for n in nodes:
         path = bidirectional_shortest_path(G, 'root', n)
         for i,node in enumerate(path):
@@ -383,7 +353,7 @@ def lca_many_nodes(G, nodes, lca_frac=1.0):
                 T[i][node] += 1
             except KeyError:
                 T[i][node] = 1
-    ## from finest to coarsest, does any classification pass the lca_frac?
+    ## From finest to coarsest, does any classification pass the lca_frac?
     ### note: species is lowest possible level
     for i in range(len(T)-1)[::-1]:
         lca = lca_frac_pass(T[i], lca_frac)
@@ -398,10 +368,19 @@ def lca_many_nodes(G, nodes, lca_frac=1.0):
     logging.warning('Cannot find LCA for nodes: {}'.format(','.join(nodes)))
     return ['unclassified', 'NA', 'NA', 'NA']
 
-def _query_tax(tax_queries, G, qtax, ttax, lca_frac=1.0, max_tips=100,
-               verbose=False):
+def _query_tax(tax_queries: list, G, qtax: str, ttax: str, 
+               lca_frac: float=1.0, max_tips: int=100,
+               verbose: bool=False) -> dict:
     """
-    Querying list of taxonomic names
+    Querying list of taxonomic names.
+    Params:
+      tax_queries: list of taxonomic names to query
+      G: graph containing taxonomy
+      qtax: query taxonomy column name
+      ttax: target taxonomy column name
+      lca_frac: fraction of decendents that must have the same taxonomy
+      max_tips: maximum number of tips to consider
+      verbose: print progress updates?
     Return:
       {query : [new_taxname, lca_score, rank]}
     """
@@ -440,9 +419,14 @@ def _query_tax(tax_queries, G, qtax, ttax, lca_frac=1.0, max_tips=100,
     # return
     return idx
 
-def queries_taxid2species(queries, tax_graph):
+def queries_taxid2species(queries: dict, tax_graph) -> dict:
     """
-    If queries were taxids, getting taxonomic classification for each query
+    If queries were taxids, getting taxonomic classification for each query.
+    Params:
+      queries: dict of {query_id: taxid}
+      tax_graph: networkx graph of taxonomy
+    Return:
+      {query_id: [taxname, rank]}
     """
     logging.info('Converting query taxids to species-level classifications')
     queries_new = {}
@@ -471,27 +455,28 @@ def queries_taxid2species(queries, tax_graph):
     logging.info('  No. of de-rep queries: {}'.format(len(queries_new.keys())))
     return queries_new
                 
-def query_tax(tax_queries, G, tax, lca_frac=1.0, max_tips=100,
-              column=1, header=False, tax_graph=None, prefix='',
-              procs=1, verbose=False):
+def query_tax(tax_queries: str, G, tax: str, lca_frac: float=1.0, 
+              max_tips: int=100, column: int=1, header: bool=False, 
+              tax_graph=None, prefix: str='',
+              procs: int=1, verbose: bool=False) -> dict:
     """
-    Querying list of taxonomic names    
+    Querying list of taxonomic names.   
     Params:
-      tax_queries : str, text file of taxonomic queries
-      G : nx.graph, graphs for each of the 2 taxonomies
-      tax : str, either 'ncbi_taxonomy' or 'gtdb_taxonomy'
-      lca_frac : float, taxonomic "purity" of node required to consider it the LCA
-      max_tips : int, the max number of tips considered for determining the LCA
-      column : the column in the tax_queries file that contains the taxonomic classifications
-      header : does the tax_queries file contain a header?
-      tax_graph : a graph that will be used for converting NCBI taxids to species-level queries
-      prefix : add a prefix to all of the queries (eg., "s__")?      
+      tax_queries: text file of taxonomic queries
+      G: nx.graph, graphs for each of the 2 taxonomies
+      tax: either 'ncbi_taxonomy' or 'gtdb_taxonomy'
+      lca_frac: taxonomic "purity" of node required to consider it the LCA
+      max_tips: the max number of tips considered for determining the LCA
+      column: the column in the tax_queries file that contains the taxonomic classifications
+      header: does the tax_queries file contain a header?
+      tax_graph: a graph that will be used for converting NCBI taxids to species-level queries
+      prefix: add a prefix to all of the queries (eg., "s__")?      
     Return:
       {(node_name_lowercase, node_name) : count}   
     """
     ttax = 'ncbi_taxonomy' if tax == 'gtdb_taxonomy' else 'gtdb_taxonomy'
     # loading & batching queries
-    logging.info('Reading in queries: {}'.format(tax_queries))
+    logging.info(f'Reading in queries: {tax_queries}')
     n_queries = 0
     queries = {}
     with gtdb2td.Utils.Open(tax_queries) as inF:
@@ -521,8 +506,8 @@ def query_tax(tax_queries, G, tax, lca_frac=1.0, max_tips=100,
     for i,q in enumerate(queries):
         q_batch[i % procs].append(q)
     queries = None
-    logging.info('  No. of batches: {}'.format(len(q_batch)))
-    logging.info('  Queries per batch: {}'.format(len(q_batch[0])))
+    logging.info(f'  No. of batches: {len(q_batch))}')
+    logging.info(f'  Queries per batch: {len(q_batch[0])}')
     # query graphs
     logging.info('Querying taxonomies...')
     func = functools.partial(_query_tax, G=G, qtax=tax, ttax=ttax,
@@ -535,9 +520,15 @@ def query_tax(tax_queries, G, tax, lca_frac=1.0, max_tips=100,
         idx = map(func, q_batch)    
     return idx
 
-def write_table(idx, outdir, qtax):
+def write_table(idx: dict, outdir: str, qtax: str) -> None:
     """
-    Writing tab-delim table of taxonomy mappings to STDOUT
+    Write tab-delim table of taxonomy mappings to STDOUT.
+    Params:
+      idx: dict of {query_id: [taxname, count]}
+      outdir: output directory
+      qtax: either 'ncbi_taxonomy' or 'gtdb_taxonomy'
+    Return:
+      None
     """
     if not os.path.isdir(outdir):
         os.makedirs(outdir)
@@ -549,19 +540,28 @@ def write_table(idx, outdir, qtax):
         for x in idx:
             for k,v in x.items():
                 outF.write('\t'.join([k] + v) + '\n')
-    logging.info('File written: {}'.format(outfile))
+    logging.info(f'File written: {outfile}')
 
-def rename(tax_idx, tax_queries, outdir, column=1, header=False):
+def rename(tax_idx: list, tax_queries: str, outdir: str, 
+           column: int=1, header: bool=False) -> None:
     """
-    Renaming queries with new taxonomic classifications.
+    Rename queries with new taxonomic classifications.
     All entries that cannot be re-named will be excluded in the output.
+    Params:
+      tax_idx: list of dicts of {query_id: [taxname, count]}
+      tax_queries: text file of taxonomic queries
+      outdir: output directory
+      column: the column in the tax_queries file that contains the taxonomic classifications
+      header: does the tax_queries file contain a header?
+    Return:
+      None
     """
-    # converting tax_idx to a simple index
+    # Convert tax_idx to a simple index
     idx = {}  # {old_tax : new_tax}
     for x in tax_idx:
         for k,v in x.items():
             idx[k] = v[0]
-    # renaming queries
+    # Rename queries
     if not os.path.isdir(outdir):
         os.makedirs(outdir)
     outfile = os.path.join(outdir, 'queries_renamed.tsv')
@@ -588,26 +588,26 @@ def rename(tax_idx, tax_queries, outdir, column=1, header=False):
                     continue
             outF.write('\t'.join(line) + '\n')
     # status
-    logging.info('File written: {}'.format(outfile))
-    logging.info('  No. of queries renamed: {}'.format(status['renamed']))
-    logging.info('  No. of queries excluded: {}'.format(status['excluded']))
+    logging.info(f'File written: {outfile}')
+    logging.info(f'  No. of queries renamed: {status["renamed"]}'
+    logging.info(f'  No. of queries excluded: {status["excluded"]}'
             
-def main(args):
+def main(args: dict) -> None:
     """
     Main interface
     """
-    # loading ncbi dmp files if provided
+    # Load ncbi dmp files, if provided
     if args.names_dmp is not None and args.nodes_dmp is not None:
         ncbi_tax = gtdb2td.Dmp.load_dmp(args.names_dmp, args.nodes_dmp)
     else:
         ncbi_tax = None    
-    # loading the metadata as graphs
+    # Load the metadata as graphs
     G = {'ncbi_taxonomy' : DiGraph_w_root(),
          'gtdb_taxonomy' : DiGraph_w_root()}
     for F in args.gtdb_metadata:
        load_gtdb_metadata(F, G, args.completeness, args.contamination,
                           no_prefix=args.no_prefix)
-    # querying
+    # Query taxonomy
     idx = query_tax(args.tax_queries, G,
                     tax=args.query_taxonomy,
                     lca_frac = args.fraction,
@@ -618,11 +618,11 @@ def main(args):
                     prefix = args.prefix,
                     procs = args.procs, 
                     verbose = args.verbose)
-    # re-naming taxa
+    # Rename taxa
     if args.rename:
         rename(idx, args.tax_queries, args.outdir,
                column = args.column, header = args.header)
-    # writing results
+    # Write results
     write_table(idx, args.outdir, qtax=args.query_taxonomy)
              
 if __name__ == '__main__':

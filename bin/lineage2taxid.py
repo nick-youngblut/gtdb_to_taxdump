@@ -68,7 +68,15 @@ parser.add_argument('--taxid-rank-column', type=str, default='taxid_rank',
 parser.add_argument('--version', action='version', version=__version__)
 
 # functions
-def lineage2taxid(lineage, G):    
+def lineage2taxid(lineage: str, G) -> list:
+    """
+    Convert taxonomy lineage string to list of taxids
+    Params:
+      lineage: taxonomy lineage string
+      G: graph object containing NCBI taxonomy
+    Return:
+      List of taxids (or [NA,NA] if no taxid could be mapped)
+    """
     lineage = lineage.split(';')    
     for cls in lineage[::-1]:
         cls = cls.lower()
@@ -79,12 +87,20 @@ def lineage2taxid(lineage, G):
     logging.warning(msg.format(';'.join(lineage)))
     return ['NA', 'NA']            
 
-def parse_lineage_table(table_file, lineage_column, G,
-                        taxid_column, taxid_rank_column):
+def parse_lineage_table(table_file: str, lineage_column: str, G, 
+                        taxid_column: str, taxid_rank_column: str) -> None:
     """
-    Parsing lineage and finding taxid
+    Parse lineage and finding taxid.
+    Params:
+      table_file: input table file
+      lineage_column: column containing lineages
+      G: graph containing NCBI taxonomy
+      taxid_column: column name to write taxids
+      taxid_rank_column: column name to write taxid ranks
+    Return:
+      None
     """
-    logging.info('Parsing file: {}'.format(table_file))
+    logging.info(f'Parsing file: {table_file}')
     header = {}
     with gtdb2td.Utils.Open(table_file) as inF:
         for i,line in enumerate(inF):
@@ -95,8 +111,7 @@ def parse_lineage_table(table_file, lineage_column, G,
                 try:
                     _ = header[lineage_column]
                 except KeyError:
-                    msg = 'Cannot find column: {}'
-                    raise KeyError(msg.format(lineage_column))
+                    raise KeyError(f'Cannot find column: {lineage_column}')
                 print('\t'.join(line + [taxid_column, taxid_rank_column]))
                 continue
             # body
@@ -105,10 +120,9 @@ def parse_lineage_table(table_file, lineage_column, G,
             print('\t'.join(line + [str(taxid), str(rank)]))
             # status
             if i > 0 and (i+1) % 100 == 0:
-                logging.info('  Records processed: {}'.format(i+1))
+                logging.info(f'  Records processed: {i+1}')
 
-## main interface
-def main(args):
+def main(args: dict) -> None:
     """
     Main interface
     """
