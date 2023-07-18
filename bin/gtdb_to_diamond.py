@@ -67,9 +67,15 @@ logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
 
 # functions
-def accession2taxid(names_dmp, faa_files, outdir):
+def accession2taxid(names_dmp: dict, faa_files: dict, outdir: str) -> None:
     """ 
-    Creating accession2taxid table
+    Creating accession2taxid table.
+    Params:
+      names_dmp: dict of taxdump names.dmp file
+      faa_files: dict of faa file paths and accessions 
+      outdir: str output directory
+    Returns:
+      None (writes accession2taxid.tsv file)
     """
     outfile = os.path.join(outdir, 'accession2taxid.tsv')    
     logging.info('Creating accession2taxid table...')
@@ -87,9 +93,15 @@ def accession2taxid(names_dmp, faa_files, outdir):
             outF.write('\t'.join(line) + '\n')
     logging.info('  File written: {}'.format(outfile))
     
-def faa_merge(faa_files, outdir, gzip_out=False):
+def faa_merge(faa_files: dict, outdir: str, gzip_out: bool=False) -> None:
     """ 
-    Reading in, formatting, and merging all faa files
+    Reading in, formatting, and merging all faa files.
+    Params:
+      faa_files: dict of faa file paths and accessions  
+      outdir: str output directory
+      gzip_out: bool gzip output fasta?
+    Returns:
+      None (writes gtdb_all.faa file)
     """
     outfile = os.path.join(outdir, 'gtdb_all.faa')
     if gzip_out:
@@ -115,7 +127,7 @@ def faa_merge(faa_files, outdir, gzip_out=False):
     logging.info('  No. of seqs. written: {}'.format(seq_cnt))
 
 ## main interface
-def main(args):
+def main(args: dict) -> None:
     """ 
     Main interface
     """
