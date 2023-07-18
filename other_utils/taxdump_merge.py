@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import os
-import sys
 import re
-import gzip
-import bz2
 import argparse
 import logging
 # 3rd party
@@ -47,12 +43,12 @@ parser.add_argument('--output-prefix', type=str, default='merged',
 parser.add_argument('--version', action='version', version='0.0.1')
 
 # functions
-def load_dmp(names_dmp_file, nodes_dmp_file):
+def load_dmp(names_dmp_file: str, nodes_dmp_file: str):
     """
     Loading NCBI names/nodes dmp files as DAG
-    Arguments:
-      names_dmp_file : str, names.dmp file
-      nodes_dmp_file : str, nodes.dmp file 
+    Params:
+      names_dmp_file : names.dmp file
+      nodes_dmp_file : nodes.dmp file 
     Return:
       network.DiGraph object
     """
@@ -94,13 +90,13 @@ def load_dmp(names_dmp_file, nodes_dmp_file):
     logging.info('  No. of edges: {}'.format(G.number_of_edges()))
     return G
 
-def add_dmp(G, names_dmp_file, nodes_dmp_file):
+def add_dmp(G, names_dmp_file: str, nodes_dmp_file: str):
     """
-    Adding 2nd taxdump to original taxdump graph
-    Arguments:
+    Add 2nd taxdump to original taxdump graph.
+    Params:
       G : DiGraph, taxdump graph
-      names_dmp_file : str, names.dmp file
-      nodes_dmp_file : str, nodes.dmp file 
+      names_dmp_file : names.dmp file
+      nodes_dmp_file : nodes.dmp file 
     Return:
       network.DiGraph object, {taxid_old | taxid_new}
     """
@@ -146,18 +142,18 @@ def add_dmp(G, names_dmp_file, nodes_dmp_file):
     logging.info('  No. of edges: {}'.format(G.number_of_edges()))
     return G,rn_idx    
             
-def write_taxdump_names(G, outfile):
+def write_taxdump_names(G, outfile: str) -> None:
     """
-    Writing taxdump names file
+    Write taxdump names file.
     """
     with open(outfile, 'w') as outF:
         for node in G.nodes:
             line = [str(node), str(G.nodes[node]['name']),
                     'scientific name', '']
             outF.write('\t|\t'.join(line) + '\n')
-    logging.info('File written: {}'.format(outfile))
+    logging.info(f'File written: {outfile}')
 
-def write_taxdump_nodes(G, outfile):
+def write_taxdump_nodes(G, outfile: str) -> None:
     """
     Writing taxdump nodes file
     """
@@ -178,9 +174,9 @@ def write_taxdump_nodes(G, outfile):
                         0, 0, 11, 1, 1, 0, 0, 0]
                 line = [str(x) for x in line]
                 outF.write('\t|\t'.join(line) + '\n')
-    logging.info('File written: {}'.format(outfile))
+    logging.info(f'File written: {outfile}')
     
-def write_taxdump(G, out_prefix):
+def write_taxdump(G, out_prefix: str) -> None:
     """
     Writing taxdump (eg., names.dmp & nodes.dmp)
     """
@@ -189,7 +185,7 @@ def write_taxdump(G, out_prefix):
     # writing nodes
     write_taxdump_nodes(G, out_prefix + '_nodes.dmp')
 
-def write_rename_index(idx, out_prefix):
+def write_rename_index(idx, out_prefix: str) -> None:
     """
     Writing file that maps taxids renamed during the merging
     """
@@ -199,9 +195,9 @@ def write_rename_index(idx, out_prefix):
         for taxid_old,taxid_new in idx.items():
             line = [str(x) for x in [taxid_old, taxid_new]]
             outF.write('\t'.join(line) + '\n')
-    logging.info('File written: {}'.format(F))
+    logging.info(f'File written: {F}')
     
-def main(args):
+def main(args: dict) -> None:
     """
     Main interface
     """

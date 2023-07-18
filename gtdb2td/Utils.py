@@ -4,9 +4,7 @@ import gzip
 import bz2
 import argparse
 import logging
-import csv
 import urllib.request
-import codecs
 from collections import OrderedDict
 
 
