@@ -78,8 +78,8 @@ def accession2taxid(names_dmp: dict, faa_files: dict, outdir: str) -> None:
             try:
                 taxID = names_dmp[accession]
             except KeyError:
-                msg = 'Cannot find {} accession in names.dmp'
-                raise KeyError(msg.format(accession))
+                msg = 'WARNING: Cannot find {} accession in names.dmp'
+                logging.warning(msg.format(accession))
             acc_base = os.path.splitext(accession)[0]
             line = [acc_base, accession, str(taxID), '']
             outF.write('\t'.join(line) + '\n')
